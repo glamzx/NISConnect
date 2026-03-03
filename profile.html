@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile — NIS Alumni</title>
+    <meta name="description" content="View alumni profile on NIS Alumni." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { display: ['Outfit', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+                    colors: {
+                        navy: { DEFAULT: '#0B1D3A', light: '#15325E' },
+                        accent: { DEFAULT: '#C8FF00', soft: '#D4FF4D' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/custom.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-body bg-gray-50 min-h-screen">
+
+    <!-- ═══════════════════════════════════════════════════════
+       TOP NAV
+       ═══════════════════════════════════════════════════════ -->
+    <nav class="bg-navy text-white">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-2 no-underline">
+                <div class="w-9 h-9 bg-accent rounded-full flex items-center justify-center">
+                    <span class="font-display font-900 text-navy text-sm">N</span>
+                </div>
+                <span class="font-display font-bold text-lg text-white">NIS Alumni</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="map.html" class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="map" class="w-4 h-4"></i> Map
+                </a>
+                <a href="settings.html"
+                    class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="settings" class="w-4 h-4"></i> Settings
+                </a>
+                <a href="api/logout.php"
+                    class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════
+       PROFILE HEADER
+       ═══════════════════════════════════════════════════════ -->
+    <div class="gradient-bg py-16 relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none"
+            style="background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px); background-size: 40px 40px;">
+        </div>
+        <div class="max-w-5xl mx-auto px-6 relative z-10 flex flex-col sm:flex-row items-center gap-6">
+            <img id="profile-avatar"
+                src="https://ui-avatars.com/api/?name=NIS+Alumni&background=C8FF00&color=0B1D3A&size=128&bold=true&font-size=0.4"
+                alt="Profile avatar" class="profile-avatar w-28 h-28" />
+            <div class="text-center sm:text-left">
+                <h1 id="profile-name" class="font-display font-900 text-3xl text-white">Loading…</h1>
+                <p class="text-white/50 text-lg mt-1">
+                    <span id="profile-branch"></span>
+                    <span id="profile-year" class="ml-2"></span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+       PROFILE BODY
+       ═══════════════════════════════════════════════════════ -->
+    <div class="max-w-5xl mx-auto px-6 -mt-6 relative z-20">
+        <div class="grid md:grid-cols-3 gap-8">
+
+            <!-- Left: Info card -->
+            <div class="md:col-span-2">
+                <div class="glass-card-light p-8">
+                    <h2 class="font-display font-bold text-xl text-navy mb-4 flex items-center gap-2">
+                        <i data-lucide="info" class="w-5 h-5 text-accent"></i>
+                        About
+                    </h2>
+                    <p id="profile-bio" class="text-gray-600 leading-relaxed">Loading…</p>
+
+                    <hr class="my-6 border-gray-200" />
+
+                    <div class="grid sm:grid-cols-2 gap-6">
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">University</p>
+                            <p id="profile-university" class="text-navy font-semibold">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Degree / Major
+                            </p>
+                            <p id="profile-degree" class="text-navy font-semibold">—</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-1">Email</p>
+                            <p id="profile-email" class="text-navy font-semibold">—</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Social links -->
+            <div>
+                <div class="glass-card-light p-8">
+                    <h2 class="font-display font-bold text-xl text-navy mb-4 flex items-center gap-2">
+                        <i data-lucide="share-2" class="w-5 h-5 text-accent"></i>
+                        Social
+                    </h2>
+                    <div class="space-y-3">
+                        <a id="link-linkedin" href="#" target="_blank" rel="noopener"
+                            class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-accent/10 transition group no-underline">
+                            <div
+                                class="w-10 h-10 rounded-full bg-[#0077B5] flex items-center justify-center text-white">
+                                <i data-lucide="linkedin" class="w-5 h-5"></i>
+                            </div>
+                            <span
+                                class="text-navy font-semibold text-sm group-hover:text-accent transition">LinkedIn</span>
+                            <i data-lucide="external-link" class="w-4 h-4 text-gray-400 ml-auto"></i>
+                        </a>
+
+                        <a id="link-instagram" href="#" target="_blank" rel="noopener"
+                            class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-accent/10 transition group no-underline">
+                            <div
+                                class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white">
+                                <i data-lucide="instagram" class="w-5 h-5"></i>
+                            </div>
+                            <span
+                                class="text-navy font-semibold text-sm group-hover:text-accent transition">Instagram</span>
+                            <i data-lucide="external-link" class="w-4 h-4 text-gray-400 ml-auto"></i>
+                        </a>
+
+                        <a id="link-youtube" href="#" target="_blank" rel="noopener"
+                            class="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-accent/10 transition group no-underline">
+                            <div
+                                class="w-10 h-10 rounded-full bg-[#FF0000] flex items-center justify-center text-white">
+                                <i data-lucide="youtube" class="w-5 h-5"></i>
+                            </div>
+                            <span
+                                class="text-navy font-semibold text-sm group-hover:text-accent transition">YouTube</span>
+                            <i data-lucide="external-link" class="w-4 h-4 text-gray-400 ml-auto"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer spacer -->
+    <div class="h-16"></div>
+
+    <script src="js/profile.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

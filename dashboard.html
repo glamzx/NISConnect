@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — NIS Alumni</title>
+    <meta name="description" content="Your NIS Alumni dashboard — feed, alumni directory, map, and profile." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { display: ['Outfit', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+                    colors: {
+                        navy: { DEFAULT: '#0B1D3A', light: '#15325E' },
+                        accent: { DEFAULT: '#C8FF00', soft: '#D4FF4D' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/custom.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-body bg-gray-50 text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- ═══════════════════════════════════════════════════════
+       TOP NAVBAR
+       ═══════════════════════════════════════════════════════ -->
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center px-6 z-50 shrink-0">
+        <div class="flex items-center justify-between w-full">
+
+            <!-- Left: Logo -->
+            <a href="dashboard.html" class="flex items-center gap-2.5 no-underline">
+                <span class="font-display font-900 text-navy text-xl tracking-tight">NIS Alumni<span
+                        class="text-accent">*</span></span>
+            </a>
+
+            <!-- Center: Search -->
+            <div class="hidden md:flex flex-1 max-w-md mx-8">
+                <div class="relative w-full">
+                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="global-search" placeholder="Search alumni…"
+                        class="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-full text-sm border-none outline-none focus:ring-2 focus:ring-accent/30 transition" />
+                </div>
+            </div>
+
+            <!-- Right: Avatar dropdown -->
+            <div class="relative">
+                <button id="avatar-btn" class="flex items-center gap-2 hover:opacity-80 transition">
+                    <img id="nav-avatar"
+                        src="https://ui-avatars.com/api/?name=U&background=C8FF00&color=0B1D3A&size=36&bold=true&font-size=0.45"
+                        alt="Avatar" class="w-9 h-9 rounded-full object-cover border-2 border-gray-200" />
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400"></i>
+                </button>
+
+                <!-- Dropdown -->
+                <div id="avatar-dropdown"
+                    class="hidden absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                    <div class="px-4 py-2 border-b border-gray-100">
+                        <p id="dropdown-name" class="font-semibold text-sm text-navy truncate">Loading…</p>
+                        <p class="text-xs text-gray-400">NIS Alumni</p>
+                    </div>
+                    <a href="#" onclick="navigateTo('profile')"
+                        class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition">
+                        <i data-lucide="user" class="w-4 h-4"></i> Profile
+                    </a>
+                    <a href="#" onclick="navigateTo('settings')"
+                        class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 transition">
+                        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+                    </a>
+                    <hr class="my-1 border-gray-100" />
+                    <a href="api/logout.php"
+                        class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> Log out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MAIN LAYOUT (Sidebar + Content)
+       ═══════════════════════════════════════════════════════ -->
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="w-64 bg-white border-r border-gray-200 shrink-0 hidden md:flex flex-col py-6 overflow-y-auto">
+            <nav class="flex-1 px-4 space-y-1">
+                <button onclick="navigateTo('feed')" data-nav="feed"
+                    class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition text-left">
+                    <i data-lucide="newspaper" class="w-5 h-5"></i> Feed
+                </button>
+                <button onclick="navigateTo('alumni')" data-nav="alumni"
+                    class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition text-left">
+                    <i data-lucide="users" class="w-5 h-5"></i> Alumni
+                </button>
+                <button onclick="navigateTo('map')" data-nav="map"
+                    class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition text-left">
+                    <i data-lucide="map" class="w-5 h-5"></i> Map
+                </button>
+                <button onclick="navigateTo('profile')" data-nav="profile"
+                    class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition text-left">
+                    <i data-lucide="user" class="w-5 h-5"></i> Profile
+                </button>
+                <button onclick="navigateTo('settings')" data-nav="settings"
+                    class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition text-left">
+                    <i data-lucide="settings" class="w-5 h-5"></i> Settings
+                </button>
+            </nav>
+
+            <!-- Sidebar footer -->
+            <div class="px-6 pt-4 border-t border-gray-100 mt-auto">
+                <p class="text-xs text-gray-400">&copy; 2026 NIS Alumni</p>
+                <p class="text-xs text-gray-400">by Alissultan Otan</p>
+            </div>
+        </aside>
+
+        <!-- Mobile bottom nav -->
+        <nav
+            class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex items-center justify-around py-2">
+            <button onclick="navigateTo('feed')" data-nav="feed"
+                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
+                <i data-lucide="newspaper" class="w-5 h-5"></i><span class="text-xs">Feed</span>
+            </button>
+            <button onclick="navigateTo('alumni')" data-nav="alumni"
+                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
+                <i data-lucide="users" class="w-5 h-5"></i><span class="text-xs">Alumni</span>
+            </button>
+            <button onclick="navigateTo('map')" data-nav="map"
+                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
+                <i data-lucide="map" class="w-5 h-5"></i><span class="text-xs">Map</span>
+            </button>
+            <button onclick="navigateTo('profile')" data-nav="profile"
+                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
+                <i data-lucide="user" class="w-5 h-5"></i><span class="text-xs">Profile</span>
+            </button>
+        </nav>
+
+        <!-- ═══════════════════════════════════════════════════
+         CONTENT SECTIONS
+         ═══════════════════════════════════════════════════ -->
+        <main class="flex-1 overflow-y-auto pb-20 md:pb-0">
+
+            <!-- ──── FEED SECTION ──────────────────────────────── -->
+            <section id="section-feed" class="page-section hidden">
+                <div class="max-w-2xl mx-auto px-6 py-8">
+                    <h1 class="font-display font-800 text-2xl text-navy mb-6">Feed</h1>
+
+                    <!-- Post Composer -->
+                    <div class="bg-white rounded-2xl border border-gray-200 p-5 mb-8 shadow-sm">
+                        <div class="flex gap-3">
+                            <img id="composer-avatar"
+                                src="https://ui-avatars.com/api/?name=U&background=C8FF00&color=0B1D3A&size=40&bold=true&font-size=0.45"
+                                class="w-10 h-10 rounded-full object-cover shrink-0" />
+                            <div class="flex-1">
+                                <textarea id="post-content" rows="3" placeholder="Share something with the community…"
+                                    class="w-full resize-none border-none outline-none text-sm text-gray-700 placeholder-gray-400 bg-transparent"></textarea>
+                                <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                                    <div class="flex items-center gap-2">
+                                        <label
+                                            class="flex items-center gap-1.5 text-gray-400 hover:text-accent cursor-pointer text-sm transition">
+                                            <i data-lucide="image" class="w-4 h-4"></i> Photo
+                                            <input type="file" id="post-file" accept="image/*" class="hidden"
+                                                multiple />
+                                        </label>
+                                        <label
+                                            class="flex items-center gap-1.5 text-gray-400 hover:text-accent cursor-pointer text-sm transition">
+                                            <i data-lucide="paperclip" class="w-4 h-4"></i> File
+                                            <input type="file" id="post-attachment" class="hidden" />
+                                        </label>
+                                    </div>
+                                    <button id="post-submit"
+                                        class="px-5 py-2 bg-navy text-white text-sm font-semibold rounded-full hover:bg-navy-light transition">
+                                        Publish
+                                    </button>
+                                </div>
+                                <!-- File preview area -->
+                                <div id="file-preview" class="flex flex-wrap gap-2 mt-3 hidden"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Posts List -->
+                    <div id="posts-list" class="space-y-4">
+                        <div class="text-center py-12 text-gray-400">
+                            <i data-lucide="newspaper" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+                            <p>No posts yet. Be the first to share!</p>
+                        </div>
+                    </div>
+
+                    <!-- Load More -->
+                    <div id="feed-load-more" class="text-center py-6 hidden">
+                        <button onclick="loadPosts()" class="text-sm text-navy font-semibold hover:underline">Load
+                            more</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ──── ALUMNI DIRECTORY ──────────────────────────── -->
+            <section id="section-alumni" class="page-section hidden">
+                <div class="max-w-5xl mx-auto px-6 py-8">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <h1 class="font-display font-800 text-2xl text-navy">Alumni Directory</h1>
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <i data-lucide="search"
+                                    class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="alumni-search" placeholder="Search…"
+                                    class="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-full text-sm outline-none focus:ring-2 focus:ring-accent/30 w-48" />
+                            </div>
+                            <select id="alumni-sort"
+                                class="bg-white border border-gray-200 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/30">
+                                <option value="name">Sort by Name</option>
+                                <option value="branch">Sort by Branch</option>
+                                <option value="year">Sort by Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="alumni-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="text-center py-12 text-gray-400 col-span-full">
+                            <i data-lucide="users" class="w-10 h-10 mx-auto mb-3 opacity-40"></i>
+                            <p>Loading alumni…</p>
+                        </div>
+                    </div>
+
+                    <div id="alumni-load-more" class="text-center py-6 hidden">
+                        <button onclick="loadAlumni()" class="text-sm text-navy font-semibold hover:underline">Load
+                            more</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ──── MAP SECTION ───────────────────────────────── -->
+            <section id="section-map" class="page-section hidden">
+                <div class="relative" style="height: calc(100vh - 64px);">
+                    <!-- Map sidebar -->
+                    <div
+                        class="absolute top-4 left-4 w-72 bg-white/95 backdrop-blur-lg rounded-2xl shadow-lg p-5 z-10 hidden sm:block">
+                        <h3 class="font-display font-bold text-navy mb-3 flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-accent"></i> Alumni Map
+                        </h3>
+                        <p class="text-xs text-gray-400 mb-3">Only mutual subscribers appear on the map.</p>
+                        <div class="flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-1.5">
+                            <span class="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+                            <span class="text-xs text-gray-500"><span id="map-alumni-count">0</span> alumni
+                                visible</span>
+                        </div>
+                    </div>
+                    <div id="google-map" class="w-full h-full"></div>
+                </div>
+            </section>
+
+            <!-- ──── PROFILE SECTION ───────────────────────────── -->
+            <section id="section-profile" class="page-section hidden">
+                <div class="max-w-3xl mx-auto px-6 py-8">
+                    <!-- Profile Header -->
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm mb-6">
+                        <div class="gradient-bg h-32 relative" style="background-color:#0B1D3A;"></div>
+                        <div class="px-6 pb-6 -mt-12 relative">
+                            <div class="flex items-end gap-4">
+                                <div class="relative group">
+                                    <img id="profile-avatar-img"
+                                        src="https://ui-avatars.com/api/?name=U&background=C8FF00&color=0B1D3A&size=96&bold=true&font-size=0.4"
+                                        class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
+                                </div>
+                                <div class="flex-1 pt-14">
+                                    <h2 id="profile-display-name" class="font-display font-800 text-xl text-navy">
+                                        Loading…</h2>
+                                    <p class="text-gray-400 text-sm">
+                                        <span id="profile-display-branch"></span>
+                                        <span id="profile-display-year" class="ml-1"></span>
+                                    </p>
+                                </div>
+                                <div id="profile-follow-wrap" class="pt-14 hidden">
+                                    <button id="profile-follow-btn" onclick="toggleFollow()"
+                                        class="px-5 py-2 rounded-full text-sm font-semibold transition"></button>
+                                </div>
+                            </div>
+
+                            <!-- Stats -->
+                            <div class="flex items-center gap-6 mt-4 text-sm">
+                                <span><strong id="profile-follower-count">0</strong> <span
+                                        class="text-gray-400">followers</span></span>
+                                <span><strong id="profile-following-count">0</strong> <span
+                                        class="text-gray-400">following</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Info -->
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="md:col-span-1 space-y-4">
+                            <!-- About Card -->
+                            <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+                                <h3 class="font-display font-bold text-navy text-sm mb-3">About</h3>
+                                <p id="profile-display-bio" class="text-gray-500 text-sm leading-relaxed">—</p>
+                                <hr class="my-3 border-gray-100" />
+                                <div class="space-y-2 text-sm">
+                                    <p class="text-gray-400"><i data-lucide="graduation-cap"
+                                            class="w-3.5 h-3.5 inline mr-1"></i> <span id="profile-display-uni"
+                                            class="text-gray-600">—</span></p>
+                                    <p class="text-gray-400"><i data-lucide="book-open"
+                                            class="w-3.5 h-3.5 inline mr-1"></i> <span id="profile-display-degree"
+                                            class="text-gray-600">—</span></p>
+                                    <p class="text-gray-400"><i data-lucide="mail" class="w-3.5 h-3.5 inline mr-1"></i>
+                                        <span id="profile-display-email" class="text-gray-600">—</span></p>
+                                </div>
+                            </div>
+
+                            <!-- Social Links -->
+                            <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+                                <h3 class="font-display font-bold text-navy text-sm mb-3">Social</h3>
+                                <div class="space-y-2">
+                                    <a id="prof-linkedin" href="#" target="_blank"
+                                        class="flex items-center gap-2 text-sm text-gray-500 hover:text-navy transition hidden">
+                                        <i data-lucide="linkedin" class="w-4 h-4"></i> LinkedIn
+                                    </a>
+                                    <a id="prof-instagram" href="#" target="_blank"
+                                        class="flex items-center gap-2 text-sm text-gray-500 hover:text-navy transition hidden">
+                                        <i data-lucide="instagram" class="w-4 h-4"></i> Instagram
+                                    </a>
+                                    <a id="prof-youtube" href="#" target="_blank"
+                                        class="flex items-center gap-2 text-sm text-gray-500 hover:text-navy transition hidden">
+                                        <i data-lucide="youtube" class="w-4 h-4"></i> YouTube
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Wall / Posts -->
+                        <div class="md:col-span-2">
+                            <h3 class="font-display font-bold text-navy text-sm mb-4">Posts</h3>
+                            <div id="wall-posts" class="space-y-4">
+                                <div class="text-center py-8 text-gray-400 text-sm">No posts yet.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ──── SETTINGS SECTION ──────────────────────────── -->
+            <section id="section-settings" class="page-section hidden">
+                <div class="max-w-2xl mx-auto px-6 py-8">
+                    <h1 class="font-display font-800 text-2xl text-navy mb-6">Settings</h1>
+
+                    <!-- Avatar Upload -->
+                    <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-6">
+                        <h3 class="font-display font-bold text-navy text-sm mb-4">Profile Picture</h3>
+                        <div class="flex items-center gap-4">
+                            <img id="settings-avatar-preview"
+                                src="https://ui-avatars.com/api/?name=U&background=C8FF00&color=0B1D3A&size=80&bold=true&font-size=0.4"
+                                class="w-20 h-20 rounded-full object-cover border-2 border-gray-200" />
+                            <div>
+                                <label
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-navy text-white text-sm font-semibold rounded-full cursor-pointer hover:bg-navy-light transition">
+                                    <i data-lucide="upload" class="w-4 h-4"></i> Upload Photo
+                                    <input type="file" id="avatar-upload" accept="image/*" class="hidden" />
+                                </label>
+                                <p class="text-xs text-gray-400 mt-2">JPG, PNG, GIF or WebP. Max 10 MB.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Form -->
+                    <form id="settings-form" class="space-y-6">
+                        <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                            <h3 class="font-display font-bold text-navy text-sm mb-4">Personal Info</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" id="s-full-name" name="full_name" class="form-input"
+                                        placeholder="Your full name" />
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="form-label">NIS Branch</label>
+                                        <select id="s-nis-branch" name="nis_branch" class="form-input">
+                                            <option value="">Select</option>
+                                            <option>Astana</option>
+                                            <option>Almaty</option>
+                                            <option>Shymkent</option>
+                                            <option>Aktobe</option>
+                                            <option>Atyrau</option>
+                                            <option>Karaganda</option>
+                                            <option>Kokshetau</option>
+                                            <option>Kostanay</option>
+                                            <option>Pavlodar</option>
+                                            <option>Petropavlovsk</option>
+                                            <option>Semey</option>
+                                            <option>Taldykorgan</option>
+                                            <option>Taraz</option>
+                                            <option>Turkestan</option>
+                                            <option>Uralsk</option>
+                                            <option>Ust-Kamenogorsk</option>
+                                            <option>Aktau</option>
+                                            <option>Kyzylorda</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Graduation Year</label>
+                                        <select id="s-grad-year" name="graduation_year" class="form-input">
+                                            <option value="">Select</option>
+                                            <script>for (let y = 2026; y >= 2008; y--)document.write(`<option>${y}</option>`);</script>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label">University</label>
+                                    <input type="text" id="s-university" name="university" class="form-input"
+                                        placeholder="e.g. MIT" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Degree / Major</label>
+                                    <input type="text" id="s-degree" name="degree_major" class="form-input"
+                                        placeholder="e.g. BSc Computer Science" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Bio</label>
+                                    <textarea id="s-bio" name="bio" rows="3" class="form-input resize-none"
+                                        placeholder="Tell your story…"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                            <h3 class="font-display font-bold text-navy text-sm mb-4">Social Links</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="form-label">LinkedIn</label>
+                                    <input type="url" id="s-linkedin" name="linkedin" class="form-input"
+                                        placeholder="https://linkedin.com/in/…" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Instagram</label>
+                                    <input type="url" id="s-instagram" name="instagram" class="form-input"
+                                        placeholder="https://instagram.com/…" />
+                                </div>
+                                <div>
+                                    <label class="form-label">YouTube</label>
+                                    <input type="url" id="s-youtube" name="youtube" class="form-input"
+                                        placeholder="https://youtube.com/@…" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="submit"
+                                class="px-8 py-3 bg-navy text-white font-semibold rounded-full hover:bg-navy-light transition text-sm">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Google Maps (loaded only when map section is opened) -->
+    <script>
+        let mapsLoaded = false;
+        function loadGoogleMaps() {
+            if (mapsLoaded) return;
+            mapsLoaded = true;
+            const s = document.createElement('script');
+            s.src = 'https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initDashboardMap';
+            s.async = true; s.defer = true;
+            document.head.appendChild(s);
+        }
+    </script>
+
+    <script src="js/dashboard.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

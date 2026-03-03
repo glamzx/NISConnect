@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NIS Alumni — Connect. Grow. Inspire.</title>
+  <meta name="description"
+    content="The private network for Nazarbayev Intellectual Schools students and graduates. Stay connected with your NIS community worldwide." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap"
+    rel="stylesheet" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { display: ['Outfit', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+          colors: {
+            navy: { DEFAULT: '#0B1D3A', light: '#15325E', dark: '#071428' },
+            accent: { DEFAULT: '#C8FF00', soft: '#D4FF4D' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/custom.css" />
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-body bg-white text-gray-800">
+
+  <!-- ═══════════════════════════════════════════════════════
+       NAVBAR
+       ═══════════════════════════════════════════════════════ -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-4">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="bg-white rounded-full shadow-lg px-6 py-3 flex items-center justify-between">
+
+        <!-- Logo -->
+        <a href="index.html" class="flex items-center gap-2.5 no-underline">
+          <span class="font-display font-900 text-navy text-xl tracking-tight">NIS Alumni<span
+              class="text-accent">*</span></span>
+        </a>
+
+        <!-- Desktop Nav Links (center) -->
+        <div class="hidden md:flex items-center gap-7">
+          <a href="#features" class="text-gray-600 hover:text-navy font-medium text-sm transition">Features</a>
+          <a href="#stats" class="text-gray-600 hover:text-navy font-medium text-sm transition">Community</a>
+          <a href="#about" class="text-gray-600 hover:text-navy font-medium text-sm transition">About</a>
+          <a href="map.html" class="text-gray-600 hover:text-navy font-medium text-sm transition">Map</a>
+        </div>
+
+        <!-- Desktop Auth Buttons (right) -->
+        <div class="hidden md:flex items-center gap-3">
+          <a href="login.html"
+            class="px-6 py-2.5 rounded-full text-sm font-semibold text-navy bg-gray-100 hover:bg-gray-200 transition-all duration-200 no-underline">
+            Log in
+          </a>
+          <a href="register.html"
+            class="px-6 py-2.5 rounded-full text-sm font-semibold text-white bg-navy hover:bg-navy-light transition-all duration-200 no-underline">
+            Sign up free
+          </a>
+        </div>
+
+        <!-- Mobile menu button -->
+        <button id="menu-toggle" class="md:hidden text-navy">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu overlay -->
+  <div id="mobile-menu" class="mobile-menu">
+    <button id="menu-close" class="absolute top-6 right-6 text-white">
+      <i data-lucide="x" class="w-7 h-7"></i>
+    </button>
+    <a href="#features" class="text-white text-2xl font-display font-bold">Features</a>
+    <a href="#stats" class="text-white text-2xl font-display font-bold">Community</a>
+    <a href="#about" class="text-white text-2xl font-display font-bold">About</a>
+    <a href="login.html" class="btn-secondary mt-4 text-lg">Log in</a>
+    <a href="register.html" class="btn-primary mt-2 text-lg">Sign up free</a>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HERO SECTION
+       ═══════════════════════════════════════════════════════ -->
+  <section class="gradient-animated min-h-screen flex items-center relative overflow-hidden"
+    style="background-color:#0B1D3A;">
+
+    <!-- Background decorative elements -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-40 -right-40 w-[600px] h-[600px] bg-accent/5 rounded-full blur-3xl animate-float"></div>
+      <div
+        class="absolute -bottom-60 -left-40 w-[500px] h-[500px] bg-accent/3 rounded-full blur-3xl animate-float delay-300">
+      </div>
+      <!-- Grid pattern overlay -->
+      <div class="absolute inset-0"
+        style="background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px); background-size: 40px 40px;">
+      </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 pt-32 pb-20 relative z-10 flex flex-col lg:flex-row items-center gap-16">
+
+      <!-- Left: Copy -->
+      <div class="flex-1 max-w-2xl">
+        <div
+          class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-8 animate-fade-in">
+          <span class="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+          <span class="text-white/80 text-sm font-medium">Exclusive NIS network</span>
+        </div>
+
+        <h1
+          class="font-display font-900 text-5xl sm:text-6xl lg:text-7xl text-white leading-[1.05] tracking-tight animate-fade-in-up">
+          Everything you are.<br />
+          <span class="text-gradient italic" style="display:inline-block; padding-right:4px;">One alumni</span><br />
+          network.
+        </h1>
+
+        <p class="text-white/60 text-lg sm:text-xl mt-8 max-w-lg leading-relaxed animate-fade-in-up delay-200">
+          Join the private community of NIS graduates and current students. Connect, discover where your classmates are,
+          and grow together — worldwide.
+        </p>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-10 animate-fade-in-up delay-300">
+          <a href="register.html" class="btn-primary text-lg !py-4 !px-8">
+            <i data-lucide="sparkles" class="w-5 h-5"></i>
+            Join the Community
+          </a>
+          <a href="#features" class="btn-secondary text-lg !py-4 !px-8">
+            Learn More
+          </a>
+        </div>
+
+        <!-- Trust badges -->
+        <div class="flex items-center gap-6 mt-12 animate-fade-in delay-500">
+          <div class="flex -space-x-3">
+            <div
+              class="w-10 h-10 rounded-full bg-accent/20 border-2 border-navy flex items-center justify-center text-accent text-xs font-bold">
+              A</div>
+            <div
+              class="w-10 h-10 rounded-full bg-blue-500/20 border-2 border-navy flex items-center justify-center text-blue-300 text-xs font-bold">
+              D</div>
+            <div
+              class="w-10 h-10 rounded-full bg-purple-500/20 border-2 border-navy flex items-center justify-center text-purple-300 text-xs font-bold">
+              M</div>
+            <div
+              class="w-10 h-10 rounded-full bg-pink-500/20 border-2 border-navy flex items-center justify-center text-pink-300 text-xs font-bold">
+              S</div>
+          </div>
+          <p class="text-white/50 text-sm">Already trusted by <strong class="text-white/80">500+ alumni</strong></p>
+        </div>
+      </div>
+
+      <!-- Right: Feature card mockup -->
+      <div class="flex-1 max-w-md w-full animate-fade-in-up delay-300">
+        <div class="glass-card p-6 relative">
+          <!-- Mini profile card -->
+          <div class="bg-accent rounded-2xl p-6 mb-4 text-navy">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-12 h-12 rounded-full bg-navy flex items-center justify-center">
+                <span class="text-accent font-display font-bold text-lg">N</span>
+              </div>
+              <div>
+                <p class="font-display font-bold text-sm">NIS Alumni</p>
+                <p class="text-navy/60 text-xs">Global Network</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div
+                class="bg-white rounded-xl px-4 py-3 text-sm font-semibold text-center hover:bg-white/80 transition cursor-pointer">
+                🗺️ Alumni Map
+              </div>
+              <div
+                class="bg-white rounded-xl px-4 py-3 text-sm font-semibold text-center hover:bg-white/80 transition cursor-pointer">
+                👤 My Profile
+              </div>
+              <div
+                class="bg-white rounded-xl px-4 py-3 text-sm font-semibold text-center hover:bg-white/80 transition cursor-pointer">
+                💬 Community Feed
+              </div>
+            </div>
+          </div>
+
+          <!-- Social row -->
+          <div class="flex items-center justify-center gap-3 mt-4">
+            <div
+              class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer">
+              <i data-lucide="linkedin" class="w-5 h-5"></i>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer">
+              <i data-lucide="instagram" class="w-5 h-5"></i>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition cursor-pointer">
+              <i data-lucide="youtube" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+      <i data-lucide="chevron-down" class="w-6 h-6 text-white/30"></i>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FEATURES SECTION
+       ═══════════════════════════════════════════════════════ -->
+  <section id="features" class="py-24 bg-white">
+    <div class="max-w-7xl mx-auto px-6">
+
+      <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+        <p class="text-accent font-display font-bold text-sm uppercase tracking-widest mb-3">Features</p>
+        <h2 class="font-display font-800 text-4xl sm:text-5xl text-navy tracking-tight">
+          Everything you need to stay connected
+        </h2>
+        <p class="text-gray-500 mt-4 text-lg">
+          From an interactive alumni map to rich profiles, NIS Alumni gives you the tools to grow your network.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Feature 1 -->
+        <div class="glass-card-light p-8 group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 reveal">
+          <div
+            class="w-14 h-14 bg-navy rounded-2xl flex items-center justify-center mb-6 group-hover:bg-accent transition-colors">
+            <i data-lucide="map-pin" class="w-7 h-7 text-accent group-hover:text-navy transition-colors"></i>
+          </div>
+          <h3 class="font-display font-bold text-xl text-navy mb-3">Alumni Map</h3>
+          <p class="text-gray-500 leading-relaxed">
+            See where NIS graduates are around the world in real time. Discover classmates nearby.
+          </p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div
+          class="glass-card-light p-8 group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 reveal delay-100">
+          <div
+            class="w-14 h-14 bg-navy rounded-2xl flex items-center justify-center mb-6 group-hover:bg-accent transition-colors">
+            <i data-lucide="user-circle" class="w-7 h-7 text-accent group-hover:text-navy transition-colors"></i>
+          </div>
+          <h3 class="font-display font-bold text-xl text-navy mb-3">Rich Profiles</h3>
+          <p class="text-gray-500 leading-relaxed">
+            Showcase your NIS branch, university, degree, and social links — all in one beautiful profile.
+          </p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div
+          class="glass-card-light p-8 group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 reveal delay-200">
+          <div
+            class="w-14 h-14 bg-navy rounded-2xl flex items-center justify-center mb-6 group-hover:bg-accent transition-colors">
+            <i data-lucide="shield-check" class="w-7 h-7 text-accent group-hover:text-navy transition-colors"></i>
+          </div>
+          <h3 class="font-display font-bold text-xl text-navy mb-3">Private & Secure</h3>
+          <p class="text-gray-500 leading-relaxed">
+            An exclusive network only for verified NIS students and alumni. Your data stays safe.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       STATS SECTION
+       ═══════════════════════════════════════════════════════ -->
+  <section id="stats" class="py-24 gradient-bg text-white">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="grid sm:grid-cols-3 gap-12 text-center">
+        <div class="reveal">
+          <p class="font-display font-900 text-5xl lg:text-6xl text-accent" data-count="21" data-suffix="+">0</p>
+          <p class="text-white/60 mt-3 text-lg">NIS Branches</p>
+        </div>
+        <div class="reveal delay-100">
+          <p class="font-display font-900 text-5xl lg:text-6xl text-accent" data-count="5000" data-suffix="+">0</p>
+          <p class="text-white/60 mt-3 text-lg">Graduates</p>
+        </div>
+        <div class="reveal delay-200">
+          <p class="font-display font-900 text-5xl lg:text-6xl text-accent" data-count="40" data-suffix="+">0</p>
+          <p class="text-white/60 mt-3 text-lg">Countries</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       ABOUT / CTA SECTION
+       ═══════════════════════════════════════════════════════ -->
+  <section id="about" class="py-24 bg-gray-50">
+    <div class="max-w-4xl mx-auto px-6 text-center reveal">
+      <h2 class="font-display font-800 text-4xl sm:text-5xl text-navy tracking-tight mb-6">
+        Built <span class="text-gradient italic" style="display:inline-block; padding-right:4px;">by NIS, for NIS</span>
+      </h2>
+      <p class="text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed mb-10">
+        NIS Alumni is a community-driven platform designed to keep the bond between Nazarbayev Intellectual Schools
+        graduates strong — no matter where life takes you.
+      </p>
+      <a href="register.html" class="btn-dark text-lg !py-4 !px-10 inline-flex">
+        <i data-lucide="rocket" class="w-5 h-5"></i>
+        Try Now
+      </a>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════ -->
+  <footer class="bg-navy text-white/50 py-12">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+          <span class="font-display font-bold text-navy text-sm">N</span>
+        </div>
+        <span class="font-display font-bold text-white text-lg">NIS Alumni</span>
+      </div>
+      <p class="text-sm">&copy; 2026 NIS Alumni Network. All rights reserved. Built by <strong
+          class="text-white/70">Alissultan Otan</strong></p>
+      <div class="flex gap-4">
+        <a href="#" class="hover:text-white transition"><i data-lucide="instagram" class="w-5 h-5"></i></a>
+        <a href="#" class="hover:text-white transition"><i data-lucide="linkedin" class="w-5 h-5"></i></a>
+        <a href="#" class="hover:text-white transition"><i data-lucide="youtube" class="w-5 h-5"></i></a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+  <script>lucide.createIcons();</script>
+
+  <!-- Navbar scroll style -->
+  <style>
+    #navbar.scrolled {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+
+    #navbar.scrolled>div>div {
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</body>
+
+</html>

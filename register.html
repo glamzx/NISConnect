@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up — NIS Alumni</title>
+    <meta name="description" content="Create your NIS Alumni account and join the community." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { display: ['Outfit', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+                    colors: {
+                        navy: { DEFAULT: '#0B1D3A', light: '#15325E' },
+                        accent: { DEFAULT: '#C8FF00', soft: '#D4FF4D' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/custom.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-body bg-gray-50 min-h-screen flex">
+
+    <!-- Left: branding panel -->
+    <div class="hidden lg:flex lg:w-1/2 gradient-animated items-center justify-center p-12 relative overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none"
+            style="background-image: radial-gradient(rgba(255,255,255,.03) 1px, transparent 1px); background-size: 40px 40px;">
+        </div>
+        <div class="relative z-10 text-center max-w-md">
+            <div class="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-8">
+                <span class="font-display font-900 text-navy text-2xl">N</span>
+            </div>
+            <h1 class="font-display font-900 text-4xl text-white tracking-tight mb-4">Join the network</h1>
+            <p class="text-white/50 text-lg">Create your profile and find NIS alumni across the globe.</p>
+        </div>
+    </div>
+
+    <!-- Right: registration form -->
+    <div class="flex-1 flex items-center justify-center p-8 overflow-y-auto">
+        <div class="w-full max-w-md animate-fade-in-up py-8">
+
+            <div class="lg:hidden flex items-center gap-2 mb-8">
+                <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+                    <span class="font-display font-900 text-navy text-lg">N</span>
+                </div>
+                <span class="font-display font-bold text-xl text-navy">NIS Alumni</span>
+            </div>
+
+            <h2 class="font-display font-800 text-3xl text-navy mb-2">Create account</h2>
+            <p class="text-gray-400 mb-8">Fill in your details to get started.</p>
+
+            <form id="register-form" class="space-y-5">
+                <div>
+                    <label for="full_name" class="form-label">Full Name</label>
+                    <input type="text" id="full_name" name="full_name" required class="form-input"
+                        placeholder="Aisha Nazarbayeva" />
+                </div>
+
+                <div>
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" required autocomplete="email" class="form-input"
+                        placeholder="you@example.com" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="nis_branch" class="form-label">NIS Branch</label>
+                        <select id="nis_branch" name="nis_branch" class="form-input" required>
+                            <option value="" disabled selected>Select city</option>
+                            <option value="Astana">Astana</option>
+                            <option value="Almaty">Almaty</option>
+                            <option value="Shymkent">Shymkent</option>
+                            <option value="Aktobe">Aktobe</option>
+                            <option value="Atyrau">Atyrau</option>
+                            <option value="Karaganda">Karaganda</option>
+                            <option value="Kokshetau">Kokshetau</option>
+                            <option value="Kostanay">Kostanay</option>
+                            <option value="Pavlodar">Pavlodar</option>
+                            <option value="Petropavlovsk">Petropavlovsk</option>
+                            <option value="Semey">Semey</option>
+                            <option value="Taldykorgan">Taldykorgan</option>
+                            <option value="Taraz">Taraz</option>
+                            <option value="Turkestan">Turkestan</option>
+                            <option value="Uralsk">Uralsk</option>
+                            <option value="Ust-Kamenogorsk">Ust-Kamenogorsk</option>
+                            <option value="Aktau">Aktau</option>
+                            <option value="Kyzylorda">Kyzylorda</option>
+                            <option value="Oral">Oral</option>
+                            <option value="Zhezkazgan">Zhezkazgan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="graduation_year" class="form-label">Grad Year</label>
+                        <select id="graduation_year" name="graduation_year" class="form-input">
+                            <option value="" disabled selected>Year</option>
+                            <script>
+                                const sel = document.currentScript.parentElement.querySelector('select') || document.getElementById('graduation_year');
+                                for (let y = 2026; y >= 2008; y--) {
+                                    const opt = document.createElement('option');
+                                    opt.value = y; opt.textContent = y;
+                                    document.getElementById('graduation_year').appendChild(opt);
+                                }
+                            </script>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" id="password" name="password" required minlength="6" class="form-input"
+                        placeholder="Min. 6 characters" />
+                </div>
+
+                <div>
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required class="form-input"
+                        placeholder="••••••••" />
+                </div>
+
+                <button type="submit" class="btn-primary w-full justify-center text-base !py-4">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i>
+                    Create Account
+                </button>
+            </form>
+
+            <p class="text-center text-gray-400 text-sm mt-8">
+                Already have an account?
+                <a href="login.html" class="text-navy font-semibold hover:underline">Sign in</a>
+            </p>
+
+            <a href="index.html"
+                class="flex items-center justify-center gap-1 text-gray-400 text-sm mt-4 hover:text-navy transition">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Back to home
+            </a>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

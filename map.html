@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alumni Map — NIS Alumni</title>
+    <meta name="description" content="Explore where NIS graduates are around the world." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { display: ['Outfit', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+                    colors: {
+                        navy: { DEFAULT: '#0B1D3A', light: '#15325E' },
+                        accent: { DEFAULT: '#C8FF00', soft: '#D4FF4D' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/custom.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-body bg-navy text-white overflow-hidden">
+
+    <!-- ═══════════════════════════════════════════════════════
+       TOP BAR
+       ═══════════════════════════════════════════════════════ -->
+    <header class="h-[72px] bg-navy/95 backdrop-blur-lg border-b border-white/10 flex items-center px-6 z-50 relative">
+        <div class="flex items-center justify-between w-full max-w-screen-2xl mx-auto">
+
+            <!-- Left: logo + title -->
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="flex items-center gap-2 no-underline">
+                    <div class="w-9 h-9 bg-accent rounded-full flex items-center justify-center">
+                        <span class="font-display font-900 text-navy text-sm">N</span>
+                    </div>
+                    <span class="font-display font-bold text-lg text-white tracking-tight">Alumni Map</span>
+                </a>
+
+                <!-- Alumni count badge -->
+                <div class="hidden sm:flex items-center gap-1.5 bg-white/10 rounded-full px-3 py-1 ml-4">
+                    <span class="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+                    <span class="text-white/70 text-xs font-medium"><span id="alumni-count">0</span> alumni
+                        online</span>
+                </div>
+            </div>
+
+            <!-- Right: nav links -->
+            <div class="flex items-center gap-4">
+                <a href="settings.html"
+                    class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Settings</span>
+                </a>
+                <a href="profile.html"
+                    class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="user" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Profile</span>
+                </a>
+                <a href="api/logout.php"
+                    class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+       MAP + SIDEBAR
+       ═══════════════════════════════════════════════════════ -->
+    <div class="map-container relative">
+
+        <!-- Sidebar -->
+        <div class="map-sidebar glass-card p-5 hidden sm:block">
+            <h3 class="font-display font-bold text-lg text-white mb-4 flex items-center gap-2">
+                <i data-lucide="search" class="w-5 h-5 text-accent"></i>
+                Filter Alumni
+            </h3>
+
+            <label for="branch-filter"
+                class="text-white/50 text-xs font-semibold uppercase tracking-wider block mb-2">NIS Branch</label>
+            <select id="branch-filter"
+                class="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-accent transition">
+                <option value="">All Branches</option>
+                <option value="Astana">Astana</option>
+                <option value="Almaty">Almaty</option>
+                <option value="Shymkent">Shymkent</option>
+                <option value="Aktobe">Aktobe</option>
+                <option value="Atyrau">Atyrau</option>
+                <option value="Karaganda">Karaganda</option>
+                <option value="Kokshetau">Kokshetau</option>
+                <option value="Kostanay">Kostanay</option>
+                <option value="Pavlodar">Pavlodar</option>
+                <option value="Petropavlovsk">Petropavlovsk</option>
+                <option value="Semey">Semey</option>
+                <option value="Taldykorgan">Taldykorgan</option>
+                <option value="Taraz">Taraz</option>
+                <option value="Turkestan">Turkestan</option>
+                <option value="Uralsk">Uralsk</option>
+                <option value="Ust-Kamenogorsk">Ust-Kamenogorsk</option>
+                <option value="Aktau">Aktau</option>
+                <option value="Kyzylorda">Kyzylorda</option>
+            </select>
+
+            <div class="mt-6 p-4 bg-white/5 rounded-xl">
+                <p class="text-white/40 text-xs uppercase tracking-wider mb-1">How it works</p>
+                <p class="text-white/60 text-sm leading-relaxed">
+                    Allow location access to appear on the map. Click any marker to see an alumni profile preview.
+                </p>
+            </div>
+        </div>
+
+        <!-- Google Map -->
+        <div id="map" class="w-full h-full"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/map.js"></script>
+    <!-- Replace YOUR_GOOGLE_MAPS_API_KEY with your actual API key -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap">
+    </script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

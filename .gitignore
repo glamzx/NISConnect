@@ -1,0 +1,18 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploads (user-generated content)
+uploads/avatars/*
+uploads/attachments/*
+!uploads/avatars/.gitkeep
+!uploads/attachments/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# MAMP
+.mamp/

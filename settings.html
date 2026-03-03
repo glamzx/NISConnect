@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings — NIS Alumni</title>
+    <meta name="description" content="Edit your NIS Alumni profile settings." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap"
+        rel="stylesheet" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { display: ['Outfit', 'sans-serif'], body: ['Inter', 'sans-serif'] },
+                    colors: {
+                        navy: { DEFAULT: '#0B1D3A', light: '#15325E' },
+                        accent: { DEFAULT: '#C8FF00', soft: '#D4FF4D' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/custom.css" />
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="font-body bg-gray-50 min-h-screen">
+
+    <!-- ═══════════════════════════════════════════════════════
+       TOP NAV
+       ═══════════════════════════════════════════════════════ -->
+    <nav class="bg-navy text-white">
+        <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-2 no-underline">
+                <div class="w-9 h-9 bg-accent rounded-full flex items-center justify-center">
+                    <span class="font-display font-900 text-navy text-sm">N</span>
+                </div>
+                <span class="font-display font-bold text-lg text-white">NIS Alumni</span>
+            </a>
+            <div class="flex items-center gap-4">
+                <a href="map.html" class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="map" class="w-4 h-4"></i> Map
+                </a>
+                <a href="profile.html"
+                    class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="user" class="w-4 h-4"></i> Profile
+                </a>
+                <a href="api/logout.php"
+                    class="text-white/60 hover:text-white transition text-sm flex items-center gap-1.5">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════════════════════════
+       SETTINGS FORM
+       ═══════════════════════════════════════════════════════ -->
+    <div class="max-w-3xl mx-auto px-6 py-12">
+        <div class="mb-8">
+            <h1 class="font-display font-800 text-3xl text-navy">Profile Settings</h1>
+            <p class="text-gray-400 mt-1">Update your profile information and social links.</p>
+        </div>
+
+        <form id="settings-form" class="space-y-10">
+
+            <!-- Personal information -->
+            <div class="glass-card-light p-8">
+                <h2 class="font-display font-bold text-xl text-navy mb-6 flex items-center gap-2">
+                    <i data-lucide="user-circle" class="w-5 h-5 text-accent"></i>
+                    Personal Information
+                </h2>
+
+                <div class="space-y-5">
+                    <div>
+                        <label for="input-full-name" class="form-label">Full Name</label>
+                        <input type="text" id="input-full-name" name="full_name" class="form-input"
+                            placeholder="Your full name" />
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-5">
+                        <div>
+                            <label for="input-nis-branch" class="form-label">NIS Branch</label>
+                            <select id="input-nis-branch" name="nis_branch" class="form-input">
+                                <option value="">Select city</option>
+                                <option value="Astana">Astana</option>
+                                <option value="Almaty">Almaty</option>
+                                <option value="Shymkent">Shymkent</option>
+                                <option value="Aktobe">Aktobe</option>
+                                <option value="Atyrau">Atyrau</option>
+                                <option value="Karaganda">Karaganda</option>
+                                <option value="Kokshetau">Kokshetau</option>
+                                <option value="Kostanay">Kostanay</option>
+                                <option value="Pavlodar">Pavlodar</option>
+                                <option value="Petropavlovsk">Petropavlovsk</option>
+                                <option value="Semey">Semey</option>
+                                <option value="Taldykorgan">Taldykorgan</option>
+                                <option value="Taraz">Taraz</option>
+                                <option value="Turkestan">Turkestan</option>
+                                <option value="Uralsk">Uralsk</option>
+                                <option value="Ust-Kamenogorsk">Ust-Kamenogorsk</option>
+                                <option value="Aktau">Aktau</option>
+                                <option value="Kyzylorda">Kyzylorda</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="input-graduation-year" class="form-label">Graduation Year</label>
+                            <select id="input-graduation-year" name="graduation_year" class="form-input">
+                                <option value="">Select year</option>
+                                <script>
+                                    for (let y = 2026; y >= 2008; y--) {
+                                        document.write(`<option value="${y}">${y}</option>`);
+                                    }
+                                </script>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="input-university" class="form-label">Current University</label>
+                        <input type="text" id="input-university" name="university" class="form-input"
+                            placeholder="e.g. MIT, Nazarbayev University" />
+                    </div>
+
+                    <div>
+                        <label for="input-degree-major" class="form-label">Degree / Major</label>
+                        <input type="text" id="input-degree-major" name="degree_major" class="form-input"
+                            placeholder="e.g. BSc Computer Science" />
+                    </div>
+
+                    <div>
+                        <label for="input-bio" class="form-label">Bio</label>
+                        <textarea id="input-bio" name="bio" rows="4" class="form-input resize-none"
+                            placeholder="Tell your story…"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social links -->
+            <div class="glass-card-light p-8">
+                <h2 class="font-display font-bold text-xl text-navy mb-6 flex items-center gap-2">
+                    <i data-lucide="share-2" class="w-5 h-5 text-accent"></i>
+                    Social Media Links
+                </h2>
+
+                <div class="space-y-5">
+                    <div>
+                        <label for="input-linkedin" class="form-label flex items-center gap-2">
+                            <i data-lucide="linkedin" class="w-4 h-4 text-[#0077B5]"></i> LinkedIn
+                        </label>
+                        <input type="url" id="input-linkedin" name="linkedin" class="form-input"
+                            placeholder="https://linkedin.com/in/yourprofile" />
+                    </div>
+
+                    <div>
+                        <label for="input-instagram" class="form-label flex items-center gap-2">
+                            <i data-lucide="instagram" class="w-4 h-4 text-[#DD2A7B]"></i> Instagram
+                        </label>
+                        <input type="url" id="input-instagram" name="instagram" class="form-input"
+                            placeholder="https://instagram.com/yourhandle" />
+                    </div>
+
+                    <div>
+                        <label for="input-youtube" class="form-label flex items-center gap-2">
+                            <i data-lucide="youtube" class="w-4 h-4 text-[#FF0000]"></i> YouTube
+                        </label>
+                        <input type="url" id="input-youtube" name="youtube" class="form-input"
+                            placeholder="https://youtube.com/@yourchannel" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save button -->
+            <div class="flex justify-end">
+                <button type="submit" class="btn-primary text-base !py-4 !px-10">
+                    <i data-lucide="save" class="w-5 h-5"></i>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Footer spacer -->
+    <div class="h-8"></div>
+
+    <script src="js/profile.js"></script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

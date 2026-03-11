@@ -185,17 +185,18 @@ function setFeedTab(tab) {
 }
 
 async function loadPosts(reset = false) {
+    const container = document.getElementById('posts-list');
+    if (reset) container.innerHTML = '<div class="text-center py-8"><div class="inline-block w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin"></div></div>';
     try {
         let posts;
         if (currentFeedTab === 'following' && currentUser?.user_id) {
             const { data: follows } = await supabaseClient.from('follows').select('following_id').eq('follower_id', currentUser.user_id);
             const followedIds = follows?.map(f => f.following_id) || [];
             if (!followedIds.length) {
-                const container = document.getElementById('posts-list');
                 container.innerHTML = '<div class="text-center py-12 text-gray-400"><p>Follow people to see their posts here!</p></div>';
                 return;
             }
-            // Try with post_views/reposts, fallback without
+            // Try full query, fallback without new tables
             let { data, error } = await supabaseClient.from('posts').select('*, profiles(*), post_likes(*), post_comments(*), post_attachments(*), post_views(*), reposts(*)').in('user_id', followedIds).order('created_at', { ascending: false }).limit(50);
             if (error) {
                 const res = await supabaseClient.from('posts').select('*, profiles(*), post_likes(*), post_comments(*), post_attachments(*)').in('user_id', followedIds).order('created_at', { ascending: false }).limit(50);
@@ -205,12 +206,8 @@ async function loadPosts(reset = false) {
         } else {
             posts = await sbGetFeedPosts();
         }
-        const container = document.getElementById('posts-list');
         if (reset) container.innerHTML = '';
-        if (!posts.length && reset) {
-            container.innerHTML = '<div class="text-center py-12 text-gray-400"><p>Nothing here yet.</p></div>';
-            return;
-        }
+        if (!posts.length && reset) return;
         posts.forEach(post => {
             const card = createPostCard(post);
             if (reset) card.classList.add('post-enter');
@@ -218,7 +215,7 @@ async function loadPosts(reset = false) {
         });
         document.getElementById('feed-load-more')?.classList.add('hidden');
         lucide.createIcons();
-    } catch(e) { console.error('loadPosts error:', e); }
+    } catch(e) { console.error('loadPosts error:', e); if (reset) container.innerHTML = ''; }
 }
 
 function createPostCard(post) {
@@ -435,7 +432,7 @@ function createAlumniCard(user, isFollowing = false, isMutual = false) {
         } else if (isFollowing) {
             followBtnHtml = `<button onclick="event.stopPropagation();directoryFollow('${user.id}', this)" class="dir-follow-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full bg-navy text-white transition" data-following="1" onmouseenter="this.textContent='Unfollow'" onmouseleave="this.textContent='Following'">Following</button>`;
         } else {
-            followBtnHtml = `<button onclick="event.stopPropagation();directoryFollow('${user.id}', this)" class="dir-follow-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border-2 border-accent text-accent hover:bg-accent hover:text-navy transition" data-following="0">Follow</button>`;
+            followBtnHtml = `<button onclick="event.stopPropagation();directoryFollow('${user.id}', this)" class="dir-follow-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border-2 border-navy text-navy hover:bg-navy hover:text-white transition dark:border-accent dark:text-accent" data-following="0">Follow</button>`;
         }
     }
     div.innerHTML = `
@@ -462,7 +459,7 @@ async function directoryFollow(userId, btn) {
     if (wasFollowing) {
         btn.textContent = 'Follow';
         btn.dataset.following = '0';
-        btn.className = 'dir-follow-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border-2 border-accent text-accent hover:bg-accent hover:text-navy transition';
+        btn.className = 'dir-follow-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border-2 border-navy text-navy hover:bg-navy hover:text-white transition dark:border-accent dark:text-accent';
         btn.onmouseenter = null; btn.onmouseleave = null;
     } else {
         btn.textContent = 'Following';
@@ -614,10 +611,10 @@ async function loadFollowStatus(userId) {
         const msgBtn = document.getElementById('profile-msg-btn');
         btn.dataset.userId = userId;
         if (data.i_follow) {
-            btn.textContent = data.is_mutual ? '✓ Mutual' : 'Following';
+            btn.textContent = data.is_mutual ? '✓ Friends' : 'Following';
             btn.className = 'follow-btn following px-5 py-2 rounded-full text-sm font-semibold transition bg-gray-100 text-gray-600';
             btn.dataset.following = '1';
-            btn.dataset.label = data.is_mutual ? '✓ Mutual' : 'Following';
+            btn.dataset.label = data.is_mutual ? '✓ Friends' : 'Following';
             if (msgBtn) msgBtn.classList.remove('hidden');
         } else {
             btn.textContent = 'Follow';
@@ -769,6 +766,10 @@ async function submitRepost() {
     const btn = document.querySelector('#repost-modal button[onclick="submitRepost()"]');
     if (btn) { btn.disabled = true; btn.textContent = 'Reposting…'; }
     try {
+        // Create a new post that is a repost (content = user's thoughts)
+        const repostContent = text ? `${text}\n\n🔁 Repost` : '🔁 Repost';
+        const newPost = await sbCreatePost(currentUser.user_id, repostContent);
+        // Record the repost link
         await supabaseClient.from('reposts').upsert(
             { user_id: currentUser.user_id, original_post_id: pendingRepostId, repost_text: text },
             { onConflict: 'user_id,original_post_id' }
@@ -776,7 +777,7 @@ async function submitRepost() {
         showToast('Reposted!', 'success');
         closeRepostModal();
         loadPosts(true);
-    } catch { showToast('Repost failed.', 'error'); }
+    } catch(e) { console.error('Repost error:', e); showToast('Repost failed.', 'error'); }
     if (btn) { btn.disabled = false; btn.textContent = 'Repost'; }
 }
 

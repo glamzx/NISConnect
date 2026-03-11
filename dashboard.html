@@ -137,7 +137,7 @@
         </aside>
 
         <!-- Mobile bottom nav -->
-        <nav
+        <nav id="bottom-nav"
             class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex items-center justify-around py-2">
             <button onclick="navigateTo('feed')" data-nav="feed"
                 class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
@@ -254,7 +254,7 @@
                         <button id="dir-type-student" onclick="setDirectoryType('student')"
                             class="px-4 py-2 rounded-full text-sm font-semibold transition bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">🎓 Students</button>
                         <button id="dir-type-alumni" onclick="setDirectoryType('alumni')"
-                            class="px-4 py-2 rounded-full text-sm font-semibold transition bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">🏦 Alumni</button>
+                            class="px-4 py-2 rounded-full text-sm font-semibold transition bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">🏛️ Alumni</button>
                     </div>
 
                     <!-- Filter Popup -->
@@ -472,6 +472,18 @@
                         <!-- Wall / Posts -->
                         <div class="md:col-span-2">
                             <h3 class="font-display font-bold text-navy text-sm mb-4 dark:text-white">Posts</h3>
+                            <!-- Profile Post Composer (own profile only) -->
+                            <div id="profile-post-composer" class="hidden bg-white rounded-2xl border border-gray-200 p-4 shadow-sm mb-4 dark:bg-gray-800 dark:border-gray-700">
+                                <textarea id="profile-post-content" rows="2" class="w-full text-sm border-none outline-none resize-none bg-transparent text-navy dark:text-white" placeholder="What's on your mind?"></textarea>
+                                <div id="profile-file-preview" class="flex flex-wrap gap-2 mt-2 hidden"></div>
+                                <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                                    <label class="cursor-pointer text-gray-400 hover:text-navy transition flex items-center gap-1 text-sm">
+                                        <i data-lucide="image" class="w-4 h-4"></i> Media
+                                        <input type="file" id="profile-post-file" accept="image/*,video/*" multiple class="hidden" />
+                                    </label>
+                                    <button id="profile-post-submit" onclick="createProfilePost()" class="bg-navy text-white rounded-full px-5 py-2 text-sm font-semibold hover:bg-navy-light transition">Publish</button>
+                                </div>
+                            </div>
                             <div id="wall-posts" class="space-y-4">
                                 <div class="text-center py-8 text-gray-400 text-sm">No posts yet.</div>
                             </div>
@@ -583,6 +595,33 @@
                                     <label class="form-label">Status</label>
                                     <input type="text" id="s-status" name="status" class="form-input"
                                         placeholder="What are you up to? e.g. Studying at MIT 🎓" maxlength="100" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                            <h3 class="font-display font-bold text-navy text-sm mb-4">Work / Internship</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="form-label">Work Status</label>
+                                    <select id="s-work-status" name="work_status" class="form-input">
+                                        <option value="">Select</option>
+                                        <option value="student">Student</option>
+                                        <option value="intern">Intern</option>
+                                        <option value="working">Working</option>
+                                        <option value="freelance">Freelance</option>
+                                        <option value="looking">Looking for opportunities</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Company / Organization</label>
+                                    <input type="text" id="s-company" name="company" class="form-input"
+                                        placeholder="e.g. Google, KPMG" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Work Field / Role</label>
+                                    <input type="text" id="s-workfield" name="workfield" class="form-input"
+                                        placeholder="e.g. Software Engineering, Finance" />
                                 </div>
                             </div>
                         </div>

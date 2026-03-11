@@ -413,8 +413,14 @@ async function loadProfile(userId) {
         const coverLabel = document.getElementById('cover-upload-label');
         const avatarLabel = document.getElementById('profile-avatar-upload-label');
         const editBtn = document.getElementById('profile-edit-btn');
-        if (isOwnProfile) { coverLabel?.classList.remove('hidden'); avatarLabel?.classList.remove('hidden'); editBtn?.classList.remove('hidden'); setupProfileUploads(); }
-        else { coverLabel?.classList.add('hidden'); avatarLabel?.classList.add('hidden'); editBtn?.classList.add('hidden'); }
+        if (isOwnProfile) {
+            coverLabel?.classList.remove('hidden'); avatarLabel?.classList.remove('hidden'); editBtn?.classList.remove('hidden');
+            document.getElementById('profile-post-composer')?.classList.remove('hidden');
+            setupProfileUploads(); setupProfilePostFile();
+        } else {
+            coverLabel?.classList.add('hidden'); avatarLabel?.classList.add('hidden'); editBtn?.classList.add('hidden');
+            document.getElementById('profile-post-composer')?.classList.add('hidden');
+        }
 
         const followWrap = document.getElementById('profile-follow-wrap');
         if (!isOwnProfile) { followWrap.classList.remove('hidden'); loadFollowStatus(userId); }
@@ -580,6 +586,42 @@ function setupProfileUploads() {
     });
 }
 
+// ── Profile post composer ──
+let profilePostFiles = [];
+function setupProfilePostFile() {
+    document.getElementById('profile-post-file')?.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        const oversized = files.filter(f => f.size > 10 * 1024 * 1024);
+        if (oversized.length) { showToast('Media files must be less than 10MB each.', 'error'); e.target.value = ''; return; }
+        profilePostFiles = [...profilePostFiles, ...files];
+        const preview = document.getElementById('profile-file-preview');
+        if (preview && profilePostFiles.length) { preview.classList.remove('hidden'); preview.innerHTML = profilePostFiles.map((f, i) => `<span class="text-xs bg-gray-100 px-2 py-1 rounded-full">${f.name} <button onclick="profilePostFiles.splice(${i},1);this.parentElement.remove();" class="text-red-400 ml-1">&times;</button></span>`).join(''); }
+    });
+}
+
+async function createProfilePost() {
+    const content = document.getElementById('profile-post-content')?.value?.trim();
+    if (!content && !profilePostFiles.length) return;
+    const btn = document.getElementById('profile-post-submit');
+    if (btn) { btn.disabled = true; btn.textContent = 'Publishing…'; }
+    try {
+        let mediaUrls = [];
+        for (const f of profilePostFiles) {
+            const result = await sbUploadFile(f, 'posts');
+            mediaUrls.push({ url: result.file_path, type: f.type });
+        }
+        await sbCreatePost(currentUser.user_id, content || '', mediaUrls);
+        document.getElementById('profile-post-content').value = '';
+        profilePostFiles = [];
+        const preview = document.getElementById('profile-file-preview');
+        if (preview) { preview.innerHTML = ''; preview.classList.add('hidden'); }
+        showToast('Post published!', 'success');
+        loadWallPosts(currentUser.user_id);
+        loadPosts(true);
+    } catch { showToast('Error posting.', 'error'); }
+    if (btn) { btn.disabled = false; btn.textContent = 'Publish'; }
+}
+
 // ══════════════════════════════════════════════════════════
 //  SETTINGS
 // ══════════════════════════════════════════════════════════
@@ -595,6 +637,9 @@ function setupSettings() {
             bio: document.getElementById('s-bio').value.trim(),
             status: document.getElementById('s-status').value.trim(),
             birthday: document.getElementById('s-birthday').value || null,
+            work_status: document.getElementById('s-work-status')?.value || null,
+            company: document.getElementById('s-company')?.value?.trim() || null,
+            workfield: document.getElementById('s-workfield')?.value?.trim() || null,
             linkedin: document.getElementById('s-linkedin').value.trim(),
             instagram: document.getElementById('s-instagram').value.trim(),
             youtube: document.getElementById('s-youtube').value.trim(),
@@ -621,6 +666,22 @@ async function loadSettings() {
         document.getElementById('s-linkedin').value = u.linkedin || '';
         document.getElementById('s-instagram').value = u.instagram || '';
         document.getElementById('s-youtube').value = u.youtube || '';
+        if (document.getElementById('s-work-status')) document.getElementById('s-work-status').value = u.work_status || '';
+        if (document.getElementById('s-company')) document.getElementById('s-company').value = u.company || '';
+        if (document.getElementById('s-workfield')) document.getElementById('s-workfield').value = u.workfield || '';
+        // Disable university if not yet graduated (June 1st rule)
+        const gradYear = u.graduation_year;
+        const now = new Date();
+        const hasGraduated = gradYear && (now.getFullYear() > gradYear || (now.getFullYear() === gradYear && now.getMonth() >= 5));
+        const uniField = document.getElementById('s-university');
+        if (uniField && gradYear && !hasGraduated) {
+            uniField.disabled = true;
+            uniField.placeholder = 'Available after graduation (June 1)';
+            uniField.value = '';
+        } else if (uniField) {
+            uniField.disabled = false;
+            uniField.placeholder = 'e.g. MIT';
+        }
         const avatarUrl = u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.full_name)}&background=C8FF00&color=0B1D3A&size=80&bold=true&font-size=0.4`;
         document.getElementById('settings-avatar-preview').src = avatarUrl;
         const coverPreview = document.getElementById('settings-cover-preview');
@@ -729,6 +790,7 @@ async function openChat(userId) {
         document.getElementById('chat-sidebar')?.classList.add('hidden');
         document.getElementById('chat-thread')?.classList.remove('hidden');
         document.getElementById('chat-thread')?.classList.add('flex');
+        document.body.classList.add('chat-open');
     }
     await loadMessages(userId);
     // Mark messages as read
@@ -746,6 +808,7 @@ function closeMobileChat() {
     if (window.innerWidth < 768) {
         document.getElementById('chat-thread')?.classList.add('hidden');
         document.getElementById('chat-thread')?.classList.remove('flex');
+        document.body.classList.remove('chat-open');
     }
 }
 
@@ -795,6 +858,17 @@ async function sendChatMessage() {
     const content = input.value.trim();
     if (!content && !pendingChatAttachment) return;
     input.value = '';
+
+    // Optimistic: show message immediately
+    const container = document.getElementById('chat-messages');
+    if (content && container) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'flex justify-end msg-enter';
+        msgDiv.innerHTML = `<div class="max-w-[70%] bg-navy text-white rounded-2xl px-4 py-2.5 shadow-sm opacity-70"><p class="text-sm">${escHtml(content)}</p><p class="text-[10px] text-white/50 mt-1 flex items-center gap-0.5">Sending…</p></div>`;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
     try {
         let attachPath = null, attachType = null;
         if (pendingChatAttachment) {

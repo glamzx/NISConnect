@@ -865,11 +865,11 @@ html, body {
     width: 100% !important;
     max-width: 100vw !important;
     position: fixed !important;
-    top: 64px;
+    top: 0;
     left: 0;
     right: 0;
-    bottom: 56px; /* bottom nav height */
-    z-index: 30;
+    bottom: 0;
+    z-index: 50;
     background: #f9fafb;
     display: flex !important;
     flex-direction: column !important;
@@ -887,10 +887,12 @@ html, body {
     z-index: 5;
     flex-shrink: 0;
     padding: 0.75rem 1rem !important;
+    background: #fff;
   }
 
   #chat-messages {
-    flex: 1 !important;
+    flex: 1 1 0 !important;
+    min-height: 0;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     padding: 1rem !important;
@@ -902,13 +904,16 @@ html, body {
   }
 
   #chat-input-area {
-    position: sticky !important;
-    bottom: 0;
-    z-index: 5;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
     padding: 0.75rem 1rem !important;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
     background: #fff !important;
     border-top: 1px solid #e5e7eb;
+  }
+
+  /* Hide bottom nav when chat thread is open */
+  body.chat-open #bottom-nav {
+    display: none !important;
   }
 
   /* ── Feed ── */
@@ -1031,4 +1036,14 @@ html, body {
 @keyframes pulse-rec {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
+}
+
+/* Message enter animation */
+.msg-enter {
+  animation: msgSlideIn 0.25s ease-out;
+}
+
+@keyframes msgSlideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }

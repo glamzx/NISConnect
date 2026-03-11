@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS profiles (
   birthday      DATE,
   user_type     TEXT DEFAULT 'student',
   uni_graduation_year INT,
+  work_status   TEXT,
+  company       TEXT,
+  workfield     TEXT,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );

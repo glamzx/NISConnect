@@ -94,7 +94,7 @@ async function sbGetFeedPosts() {
     const { data, error } = await supabaseClient
         .from('posts')
         .select(`
-            id, content, created_at, user_id,
+            id, content, created_at, user_id, original_post_id, wall_user_id,
             profiles!posts_user_id_fkey ( full_name, avatar_url, nis_branch, username ),
             post_attachments ( id, file_path, file_type, original_name ),
             post_likes ( id, user_id ),
@@ -107,16 +107,53 @@ async function sbGetFeedPosts() {
     if (error) {
         // Fallback without post_views/reposts if tables don't exist
         const res = await supabaseClient.from('posts').select(`
-            id, content, created_at, user_id,
+            id, content, created_at, user_id, original_post_id, wall_user_id,
             profiles!posts_user_id_fkey ( full_name, avatar_url, nis_branch, username ),
             post_attachments ( id, file_path, file_type, original_name ),
             post_likes ( id, user_id ),
             post_comments ( id )
         `).order('created_at', { ascending: false }).limit(50);
         if (res.error) throw res.error;
-        return res.data;
+        return await sbEnrichPostsWithOriginals(res.data || []);
     }
-    return data;
+    return await sbEnrichPostsWithOriginals(data || []);
+}
+
+// Enrich posts that are reposts with original post data, and wall posts with wall profile
+async function sbEnrichPostsWithOriginals(posts) {
+    // Collect original post IDs
+    const originalIds = posts.filter(p => p.original_post_id).map(p => p.original_post_id);
+    // Collect wall user IDs
+    const wallUserIds = posts.filter(p => p.wall_user_id).map(p => p.wall_user_id);
+    
+    // Fetch original posts in one batch
+    let originals = {};
+    if (originalIds.length) {
+        const { data } = await supabaseClient.from('posts').select(`
+            id, content, created_at, user_id,
+            profiles!posts_user_id_fkey ( full_name, avatar_url, nis_branch, username ),
+            post_attachments ( id, file_path, file_type, original_name )
+        `).in('id', originalIds);
+        if (data) data.forEach(op => originals[op.id] = op);
+    }
+    
+    // Fetch wall profiles in one batch
+    let wallProfiles = {};
+    if (wallUserIds.length) {
+        const { data } = await supabaseClient.from('profiles').select('id, full_name, avatar_url, username').in('id', wallUserIds);
+        if (data) data.forEach(wp => wallProfiles[wp.id] = wp);
+    }
+    
+    // Attach to posts
+    posts.forEach(p => {
+        if (p.original_post_id && originals[p.original_post_id]) {
+            p._originalPost = originals[p.original_post_id];
+        }
+        if (p.wall_user_id && wallProfiles[p.wall_user_id]) {
+            p.wall_profile = wallProfiles[p.wall_user_id];
+        }
+    });
+    return posts;
 }
 
 async function sbGetUserPosts(userId) {
@@ -135,9 +172,10 @@ async function sbGetUserPosts(userId) {
     return data;
 }
 
-async function sbCreatePost(userId, content, mediaUrls, wallUserId) {
+async function sbCreatePost(userId, content, mediaUrls, wallUserId, originalPostId) {
     const postData = { user_id: userId, content };
     if (wallUserId) postData.wall_user_id = wallUserId;
+    if (originalPostId) postData.original_post_id = originalPostId;
     const { data, error } = await supabaseClient
         .from('posts')
         .insert(postData)

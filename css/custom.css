@@ -1076,3 +1076,181 @@ html, body {
   from { opacity: 0; transform: translateY(-20px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ── Mobile Bottom Navbar (Glassmorphic) ─────────────────── */
+.mobile-bottom-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.06);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.dark .mobile-bottom-nav {
+  background: rgba(26, 29, 39, 0.95) !important;
+  border-color: rgba(42, 45, 58, 0.6) !important;
+  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-nav-item {
+  color: #94A3B8;
+  min-width: 56px;
+  transition: all 0.2s ease;
+}
+
+.mobile-nav-item.active,
+.mobile-nav-item.bg-accent\/10,
+.mobile-nav-item.\!text-navy {
+  color: #0B1D3A !important;
+  background: rgba(200, 255, 0, 0.12);
+}
+
+.dark .mobile-nav-item.active,
+.dark .mobile-nav-item.bg-accent\/10 {
+  color: #C8FF00 !important;
+  background: rgba(200, 255, 0, 0.1) !important;
+}
+
+.mobile-fab {
+  box-shadow: 0 4px 20px rgba(200, 255, 0, 0.4);
+  border: 3px solid white;
+}
+
+.dark .mobile-fab {
+  border-color: #1a1d27;
+  box-shadow: 0 4px 20px rgba(200, 255, 0, 0.3);
+}
+
+/* ── Mobile Profile Layout ───────────────────────────────── */
+@media (max-width: 767px) {
+  #section-profile .max-w-4xl {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  #section-profile .grid {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  #profile-cover {
+    height: 160px !important;
+    border-radius: 0 !important;
+  }
+  
+  #section-profile .px-8 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  #section-profile .flex.items-end.gap-5 {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center;
+  }
+  
+  #section-profile .flex.items-end.gap-5 > .flex-1 {
+    padding-top: 0.5rem !important;
+    width: 100%;
+  }
+  
+  #section-profile .flex.items-center.justify-between {
+    flex-direction: column !important;
+    gap: 0.75rem;
+  }
+  
+  #section-profile #profile-avatar-img {
+    width: 96px !important;
+    height: 96px !important;
+    margin-top: -48px;
+    border-width: 3px;
+  }
+  
+  #section-profile .flex.items-center.gap-6.mt-4 {
+    justify-content: center;
+    gap: 2rem;
+  }
+  
+  #section-profile #profile-follow-wrap {
+    justify-content: center;
+  }
+  
+  #section-profile .bg-white.rounded-2xl:first-child {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+}
+
+/* ── Notification Cards ──────────────────────────────────── */
+.notif-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.notif-card:hover {
+  background: #f8fafc;
+  transform: translateX(2px);
+}
+
+.notif-card.unread {
+  background: rgba(200, 255, 0, 0.06);
+  border-color: rgba(200, 255, 0, 0.2);
+}
+
+.notif-card.unread::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: #C8FF00;
+  border-radius: 0 3px 3px 0;
+}
+
+.dark .notif-card {
+  background: #1a1d27 !important;
+  border-color: #2a2d3a !important;
+}
+
+.dark .notif-card:hover {
+  background: #22252f !important;
+}
+
+.dark .notif-card.unread {
+  background: rgba(200, 255, 0, 0.05) !important;
+  border-color: rgba(200, 255, 0, 0.15) !important;
+}
+
+/* ── Quick Post Modal Animation ──────────────────────────── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* ── Notification badge pulse ────────────────────────────── */
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+#header-notif-badge:not(.hidden),
+#mobile-notif-badge:not(.hidden) {
+  animation: badgePulse 2s ease-in-out infinite;
+}

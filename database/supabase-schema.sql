@@ -88,8 +88,22 @@ CREATE TABLE IF NOT EXISTS posts (
   id            BIGSERIAL PRIMARY KEY,
   user_id       UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   wall_user_id  UUID REFERENCES profiles(id) ON DELETE CASCADE, -- whose wall, NULL = feed post
+  original_post_id BIGINT REFERENCES posts(id) ON DELETE SET NULL, -- repost: original post
   content       TEXT NOT NULL DEFAULT '',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- -----------------------------------------------------------
+-- Notifications
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notifications (
+  id              BIGSERIAL PRIMARY KEY,
+  type            TEXT NOT NULL CHECK (type IN ('follow','like','comment','message','repost')),
+  actor_id        UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  target_user_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  post_id         BIGINT REFERENCES posts(id) ON DELETE CASCADE,
+  read            BOOLEAN NOT NULL DEFAULT false,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- -----------------------------------------------------------

@@ -63,6 +63,10 @@
                     <i data-lucide="moon" class="w-4 h-4 text-gray-400 dark-icon-moon"></i>
                     <i data-lucide="sun" class="w-4 h-4 text-yellow-400 dark-icon-sun hidden"></i>
                 </button>
+                <button onclick="navigateTo('notifications')" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition relative" title="Notifications">
+                    <i data-lucide="bell" class="w-4 h-4 text-gray-400"></i>
+                    <span id="header-notif-badge" class="hidden absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
+                </button>
                 <button id="avatar-btn" class="flex items-center gap-2 hover:opacity-80 transition">
                     <img id="nav-avatar"
                         src="https://ui-avatars.com/api/?name=U&background=C8FF00&color=0B1D3A&size=36&bold=true&font-size=0.45"
@@ -136,29 +140,33 @@
             </div>
         </aside>
 
-        <!-- Mobile bottom nav -->
+        <!-- Mobile bottom nav (redesigned) -->
         <nav id="bottom-nav"
-            class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex items-center justify-around py-2">
-            <button onclick="navigateTo('feed')" data-nav="feed"
-                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
-                <i data-lucide="newspaper" class="w-5 h-5"></i><span class="text-xs">Feed</span>
-            </button>
-            <button onclick="navigateTo('alumni')" data-nav="alumni"
-                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
-                <i data-lucide="users" class="w-5 h-5"></i><span class="text-xs">Directory</span>
-            </button>
-            <button onclick="navigateTo('map')" data-nav="map"
-                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
-                <i data-lucide="map" class="w-5 h-5"></i><span class="text-xs">Map</span>
-            </button>
-            <button onclick="navigateTo('profile')" data-nav="profile"
-                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
-                <i data-lucide="user" class="w-5 h-5"></i><span class="text-xs">Profile</span>
-            </button>
-            <button onclick="navigateTo('chat')" data-nav="chat"
-                class="mobile-nav-item flex flex-col items-center gap-1 p-2 text-gray-400">
-                <i data-lucide="message-square" class="w-5 h-5"></i><span class="text-xs">Chat</span>
-            </button>
+            class="md:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav">
+            <div class="flex items-center justify-around py-1 px-2">
+                <button onclick="navigateTo('feed')" data-nav="feed"
+                    class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all">
+                    <i data-lucide="newspaper" class="w-5 h-5"></i><span class="text-[10px] font-medium">Feed</span>
+                </button>
+                <button onclick="navigateTo('alumni')" data-nav="alumni"
+                    class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all">
+                    <i data-lucide="search" class="w-5 h-5"></i><span class="text-[10px] font-medium">Search</span>
+                </button>
+                <button onclick="openQuickPostModal()" id="mobile-new-post-btn"
+                    class="mobile-fab flex items-center justify-center w-12 h-12 rounded-full bg-accent text-navy shadow-lg -mt-5 transition-all hover:scale-110 active:scale-95">
+                    <i data-lucide="plus" class="w-6 h-6 stroke-[2.5]"></i>
+                </button>
+                <button onclick="navigateTo('notifications')" data-nav="notifications"
+                    class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all relative">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span id="mobile-notif-badge" class="hidden absolute -top-0.5 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">0</span>
+                    <span class="text-[10px] font-medium">Alerts</span>
+                </button>
+                <button onclick="navigateTo('profile')" data-nav="profile"
+                    class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all">
+                    <i data-lucide="user" class="w-5 h-5"></i><span class="text-[10px] font-medium">Profile</span>
+                </button>
+            </div>
         </nav>
 
         <!-- ═══════════════════════════════════════════════════
@@ -227,6 +235,37 @@
                     </div>
                 </div>
             </section>
+
+            <!-- ──── NOTIFICATIONS SECTION ────────────────────── -->
+            <section id="section-notifications" class="page-section hidden">
+                <div class="max-w-2xl mx-auto px-6 py-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h1 class="font-display font-800 text-2xl text-navy dark:text-white">Notifications</h1>
+                        <button onclick="markAllNotificationsRead()" class="text-xs text-gray-400 hover:text-navy dark:hover:text-accent transition font-medium">Mark all read</button>
+                    </div>
+                    <div id="notifications-list" class="space-y-2">
+                        <div class="text-center py-12 text-gray-400"><div class="inline-block w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Post Modal (mobile + button) -->
+            <div id="quick-post-modal" class="hidden fixed inset-0 bg-black/50 z-[200] flex items-end md:items-center justify-center" onclick="if(event.target===this)closeQuickPostModal()">
+                <div class="bg-white dark:bg-gray-800 w-full md:max-w-lg md:rounded-2xl rounded-t-2xl p-5 shadow-2xl animate-slide-up">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-display font-bold text-navy dark:text-white">New Post</h3>
+                        <button onclick="closeQuickPostModal()" class="text-gray-400 hover:text-gray-600 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                    <textarea id="quick-post-content" rows="4" placeholder="What's on your mind?" class="w-full resize-none border border-gray-200 dark:border-gray-600 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-accent/30 dark:bg-gray-700 dark:text-white"></textarea>
+                    <div class="flex items-center justify-between mt-3">
+                        <label class="flex items-center gap-1.5 text-gray-400 hover:text-accent cursor-pointer text-sm transition">
+                            <i data-lucide="image" class="w-4 h-4"></i> Photo
+                            <input type="file" id="quick-post-file" accept="image/*" class="hidden" multiple />
+                        </label>
+                        <button onclick="submitQuickPost()" class="px-5 py-2 bg-navy text-white text-sm font-semibold rounded-full hover:bg-navy-light transition">Publish</button>
+                    </div>
+                </div>
+            </div>
 
             <!-- ──── DIRECTORY SECTION ──────────────────────────── -->
             <section id="section-alumni" class="page-section hidden">
@@ -936,8 +975,8 @@
     </script>
 
     <script src="js/supabase.min.js"></script>
-    <script src="js/supabase-client.js?v=8"></script>
-    <script src="js/dashboard.js?v=8"></script>
+    <script src="js/supabase-client.js?v=9"></script>
+    <script src="js/dashboard.js?v=9"></script>
     <script>lucide.createIcons();</script>
 </body>
 

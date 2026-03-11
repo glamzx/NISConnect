@@ -112,6 +112,7 @@ function loadSectionData(section, userId) {
         case 'profile': profileUserId = userId || currentUser?.user_id; loadProfile(profileUserId); break;
         case 'chat': loadConversations(); break;
         case 'settings': loadSettings(); break;
+        case 'notifications': loadNotifications(); break;
     }
 }
 
@@ -204,7 +205,7 @@ async function loadPosts(reset = false) {
                 const res = await supabaseClient.from('posts').select('*, profiles!posts_user_id_fkey(*), post_likes(*), post_comments(*), post_attachments(*)').in('user_id', followedIds).order('created_at', { ascending: false }).limit(50);
                 data = res.data || [];
             }
-            posts = data || [];
+            posts = await sbEnrichPostsWithOriginals(data || []);
         } else {
             posts = await sbGetFeedPosts();
         }
@@ -222,7 +223,7 @@ async function loadPosts(reset = false) {
 
 function createPostCard(post) {
     const div = document.createElement('div');
-    div.className = 'bg-white rounded-2xl border border-gray-200 p-5 shadow-sm';
+    div.className = 'bg-white rounded-2xl border border-gray-200 p-5 shadow-sm dark:bg-gray-800 dark:border-gray-700';
     div.dataset.postId = post.id;
     const p = post.profiles || {};
     const avatarUrl = p.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name || 'U')}&background=C8FF00&color=0B1D3A&size=40&bold=true&font-size=0.45`;
@@ -233,43 +234,89 @@ function createPostCard(post) {
     const viewCount = post.post_views?.length || 0;
     const repostCount = post.reposts?.length || 0;
     const isReposted = post.reposts?.some(r => r.user_id === currentUser?.user_id);
+
+    // Attachments
     let attachHtml = '';
     if (post.post_attachments?.length) {
         attachHtml = '<div class="flex flex-wrap gap-2 mt-3">' +
             post.post_attachments.map(att => {
-                if (att.file_type === 'image') return `<img src="${att.file_path}" class="rounded-lg max-h-64 object-cover cursor-pointer hover:opacity-90 transition" onclick="openMediaViewer('${att.file_path}', 'image')" />`;
+                if (att.file_type === 'image') return `<img src="${att.file_path}" loading="lazy" class="rounded-lg max-h-64 object-cover cursor-pointer hover:opacity-90 transition" onclick="openMediaViewer('${att.file_path}', 'image')" />`;
                 if (att.file_type === 'video') return `<div class="video-preview rounded-lg max-h-64 overflow-hidden" onclick="openMediaViewer('${att.file_path}', 'video')"><video src="${att.file_path}" class="rounded-lg max-h-64 object-cover" muted preload="metadata"></video><div class="play-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0B1D3A"><polygon points="5 3 19 12 5 21"></polygon></svg></div></div>`;
                 if (att.file_type === 'audio') return `<div class="bg-gray-100 rounded-lg px-3 py-2"><audio controls src="${att.file_path}" class="max-w-[250px]"></audio></div>`;
                 return `<a href="${att.file_path}" target="_blank" class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 text-xs text-gray-600 hover:bg-gray-200 transition">📎 ${att.original_name || 'File'}</a>`;
             }).join('') + '</div>';
     }
-    // Repost indicator
+
+    // Repost indicator (legacy _repostedBy)
     let repostIndicator = '';
     if (post._repostedBy) {
         repostIndicator = `<div class="flex items-center gap-1.5 text-xs text-gray-400 mb-2"><i data-lucide="repeat-2" class="w-3 h-3"></i> ${escHtml(post._repostedBy)} reposted</div>`;
-        if (post._repostText) repostIndicator += `<p class="text-sm text-gray-500 italic mb-2 pl-3 border-l-2 border-accent">${escHtml(post._repostText)}</p>`;
     }
+
+    // Wall post attribution
+    let wallAttribution = '';
+    if (post.wall_user_id && post.wall_profile) {
+        const wallName = post.wall_profile.full_name || 'someone';
+        wallAttribution = `<div class="flex items-center gap-1 text-xs text-gray-400 mt-0.5"><i data-lucide="arrow-right" class="w-3 h-3"></i> Posted on <a onclick="navigateTo('profile','${post.wall_user_id}')" class="text-navy font-medium cursor-pointer hover:underline dark:text-accent">${escHtml(wallName)}'s</a> wall</div>`;
+    }
+
+    // Embedded original post (for reposts)
+    let embeddedPostHtml = '';
+    if (post._originalPost) {
+        const op = post._originalPost;
+        const opProf = op.profiles || {};
+        const opAvatar = opProf.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(opProf.full_name || 'U')}&background=C8FF00&color=0B1D3A&size=32&bold=true&font-size=0.45`;
+        const opTime = formatTimeAgo(op.created_at);
+        let opAttachHtml = '';
+        if (op.post_attachments?.length) {
+            opAttachHtml = '<div class="flex flex-wrap gap-2 mt-2">' +
+                op.post_attachments.map(att => {
+                    if (att.file_type === 'image') return `<img src="${att.file_path}" loading="lazy" class="rounded-lg max-h-48 object-cover" />`;
+                    if (att.file_type === 'video') return `<video src="${att.file_path}" class="rounded-lg max-h-48 object-cover" muted preload="metadata" controls></video>`;
+                    return '';
+                }).join('') + '</div>';
+        }
+        embeddedPostHtml = `
+        <div class="mt-3 border border-gray-200 rounded-xl p-4 bg-gray-50/50 dark:bg-gray-700/30 dark:border-gray-600 cursor-pointer hover:bg-gray-50 transition" onclick="navigateTo('profile','${op.user_id}')">
+          <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="repeat-2" class="w-3.5 h-3.5 text-gray-400"></i>
+            <img src="${opAvatar}" loading="lazy" class="w-6 h-6 rounded-full object-cover" />
+            <span class="font-semibold text-xs text-navy dark:text-white">${escHtml(opProf.full_name || 'Unknown')}</span>
+            <span class="text-xs text-gray-400">${opProf.nis_branch || ''}</span>
+            <span class="text-xs text-gray-300">·</span>
+            <span class="text-xs text-gray-400">${opTime}</span>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">${escHtml(op.content || '')}</p>
+          ${opAttachHtml}
+        </div>`;
+    }
+
     const deleteBtn = (post.user_id === currentUser?.user_id) ? `<button onclick="deletePost(${post.id}, this)" class="text-gray-300 hover:text-red-500 transition ml-auto"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : '';
+
+    const contentHtml = post.content ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-2 whitespace-pre-wrap leading-relaxed">${escHtml(post.content)}</p>` : '';
+
     div.innerHTML = `
     ${repostIndicator}
     <div class="flex items-start gap-3">
-      <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover shrink-0 cursor-pointer" onclick="navigateTo('profile','${post.user_id}')" />
+      <img src="${avatarUrl}" loading="lazy" class="w-10 h-10 rounded-full object-cover shrink-0 cursor-pointer" onclick="navigateTo('profile','${post.user_id}')" />
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2">
-          <a onclick="navigateTo('profile','${post.user_id}')" class="user-name-link font-semibold text-sm text-navy cursor-pointer">${escHtml(p.full_name)}</a>
+          <a onclick="navigateTo('profile','${post.user_id}')" class="user-name-link font-semibold text-sm text-navy cursor-pointer dark:text-white">${escHtml(p.full_name)}</a>
           <span class="text-xs text-gray-400">${p.nis_branch || ''}</span>
           <span class="text-xs text-gray-300">·</span>
           <span class="text-xs text-gray-400">${timeAgo}</span>
           ${deleteBtn}
         </div>
-        <p class="text-sm text-gray-700 mt-2 whitespace-pre-wrap leading-relaxed">${escHtml(post.content)}</p>
+        ${wallAttribution}
+        ${contentHtml}
         ${attachHtml}
-        <div class="flex items-center gap-5 mt-3 pt-3 border-t border-gray-100">
+        ${embeddedPostHtml}
+        <div class="flex items-center gap-5 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
           <button onclick="toggleLike(${post.id}, this)" class="post-like-btn flex items-center gap-1.5 text-sm transition ${isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}" data-liked="${isLiked ? '1' : '0'}">
             <i data-lucide="heart" class="w-4 h-4 ${isLiked ? 'fill-red-500' : ''}"></i>
             <span class="like-count">${likeCount || ''}</span>
           </button>
-          <button onclick="toggleCommentSection(${post.id}, this)" class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-navy transition">
+          <button onclick="toggleCommentSection(${post.id}, this)" class="flex items-center gap-1.5 text-sm text-gray-400 hover:text-navy transition dark:hover:text-accent">
             <i data-lucide="message-circle" class="w-4 h-4"></i>
             <span class="comment-count">${commentCount || ''}</span>
           </button>
@@ -285,8 +332,8 @@ function createPostCard(post) {
         <div id="comments-${post.id}" class="comments-section hidden mt-3">
           <div class="comments-list space-y-3"></div>
           <div class="flex items-center gap-2 mt-3">
-            <input type="text" class="comment-input flex-1 text-sm border border-gray-200 rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-accent/30" placeholder="Write a comment…" onkeydown="if(event.key==='Enter')addComment(${post.id}, this)" />
-            <button onclick="addComment(${post.id}, this.previousElementSibling)" class="text-sm text-navy font-semibold hover:text-accent transition px-3 py-2">Post</button>
+            <input type="text" class="comment-input flex-1 text-sm border border-gray-200 rounded-full px-4 py-2 outline-none focus:ring-2 focus:ring-accent/30 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Write a comment…" onkeydown="if(event.key==='Enter')addComment(${post.id}, this)" />
+            <button onclick="addComment(${post.id}, this.previousElementSibling)" class="text-sm text-navy font-semibold hover:text-accent transition px-3 py-2 dark:text-accent">Post</button>
           </div>
         </div>
       </div>
@@ -768,9 +815,8 @@ async function submitRepost() {
     const btn = document.querySelector('#repost-modal button[onclick="submitRepost()"]');
     if (btn) { btn.disabled = true; btn.textContent = 'Reposting…'; }
     try {
-        // Create a new post that is a repost (content = user's thoughts)
-        const repostContent = text ? `${text}\n\n🔁 Repost` : '🔁 Repost';
-        const newPost = await sbCreatePost(currentUser.user_id, repostContent);
+        // Create a new post that is a repost — pass original_post_id
+        const newPost = await sbCreatePost(currentUser.user_id, text, null, null, pendingRepostId);
         // Record the repost link
         await supabaseClient.from('reposts').upsert(
             { user_id: currentUser.user_id, original_post_id: pendingRepostId, repost_text: text },
@@ -1357,3 +1403,221 @@ function updateDarkIcons() {
     if (localStorage.getItem('nis-dark') === '1') document.documentElement.classList.add('dark');
     updateDarkIcons();
 })();
+
+// ══════════════════════════════════════════════════════════
+//  NOTIFICATIONS
+// ══════════════════════════════════════════════════════════
+let notifCache = [];
+
+async function loadNotifications() {
+    const container = document.getElementById('notifications-list');
+    if (!container || !currentUser?.user_id) return;
+    container.innerHTML = '<div class="text-center py-12 text-gray-400"><div class="inline-block w-6 h-6 border-2 border-navy border-t-transparent rounded-full animate-spin"></div></div>';
+    try {
+        const { data, error } = await supabaseClient
+            .from('notifications')
+            .select('*, actor:profiles!notifications_actor_id_fkey(full_name, avatar_url, username)')
+            .eq('target_user_id', currentUser.user_id)
+            .order('created_at', { ascending: false })
+            .limit(50);
+        if (error) throw error;
+        notifCache = data || [];
+        container.innerHTML = '';
+        if (!notifCache.length) {
+            container.innerHTML = '<div class="text-center py-12 text-gray-400"><p>No notifications yet</p></div>';
+            return;
+        }
+        notifCache.forEach(n => {
+            container.appendChild(createNotifCard(n));
+        });
+        updateNotifBadge();
+        lucide.createIcons();
+    } catch(e) {
+        console.log('Notifications table may not exist yet:', e.message);
+        container.innerHTML = '<div class="text-center py-12 text-gray-400"><p>No notifications yet</p></div>';
+    }
+}
+
+function createNotifCard(n) {
+    const div = document.createElement('div');
+    div.className = `notif-card relative ${n.read ? '' : 'unread'}`;
+    const actor = n.actor || {};
+    const avatarUrl = actor.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(actor.full_name || 'U')}&background=C8FF00&color=0B1D3A&size=40&bold=true&font-size=0.45`;
+    const timeAgo = formatTimeAgo(n.created_at);
+    let icon = 'bell', text = 'notified you', color = 'text-gray-400';
+    switch(n.type) {
+        case 'follow': icon = 'user-plus'; text = 'started following you'; color = 'text-blue-500'; break;
+        case 'like': icon = 'heart'; text = 'liked your post'; color = 'text-red-500'; break;
+        case 'comment': icon = 'message-circle'; text = 'commented on your post'; color = 'text-green-500'; break;
+        case 'message': icon = 'message-square'; text = 'sent you a message'; color = 'text-navy dark:text-accent'; break;
+        case 'repost': icon = 'repeat-2'; text = 'reposted your post'; color = 'text-green-500'; break;
+    }
+    div.innerHTML = `
+        <img src="${avatarUrl}" loading="lazy" class="w-10 h-10 rounded-full object-cover shrink-0" />
+        <div class="flex-1 min-w-0">
+            <p class="text-sm"><span class="font-semibold text-navy dark:text-white">${escHtml(actor.full_name || 'Someone')}</span> <span class="text-gray-500 dark:text-gray-400">${text}</span></p>
+            <span class="text-xs text-gray-400">${timeAgo}</span>
+        </div>
+        <i data-lucide="${icon}" class="w-4 h-4 ${color} shrink-0"></i>
+    `;
+    div.onclick = () => {
+        markNotifRead(n.id);
+        if (n.type === 'follow') navigateTo('profile', n.actor_id);
+        else if (n.type === 'message') navigateTo('chat');
+        else if (n.post_id) navigateTo('feed');
+    };
+    return div;
+}
+
+async function markNotifRead(id) {
+    try { await supabaseClient.from('notifications').update({ read: true }).eq('id', id); } catch(e) {}
+    const el = document.querySelector(`.notif-card[data-id="${id}"]`);
+    el?.classList.remove('unread');
+    updateNotifBadge();
+}
+
+async function markAllNotificationsRead() {
+    try {
+        await supabaseClient.from('notifications').update({ read: true }).eq('target_user_id', currentUser.user_id).eq('read', false);
+        document.querySelectorAll('.notif-card.unread').forEach(el => el.classList.remove('unread'));
+        updateNotifBadge();
+        showToast('All notifications marked as read', 'success');
+    } catch(e) { console.log('markAllRead error:', e); }
+}
+
+function updateNotifBadge() {
+    const unread = notifCache.filter(n => !n.read).length;
+    ['header-notif-badge', 'mobile-notif-badge'].forEach(id => {
+        const badge = document.getElementById(id);
+        if (!badge) return;
+        if (unread > 0) {
+            badge.textContent = unread > 9 ? '9+' : unread;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    });
+}
+
+// Fetch unread count on load
+async function fetchUnreadNotifCount() {
+    if (!currentUser?.user_id) return;
+    try {
+        const { count } = await supabaseClient.from('notifications').select('id', { count: 'exact', head: true }).eq('target_user_id', currentUser.user_id).eq('read', false);
+        if (count > 0) {
+            notifCache = Array(count).fill({ read: false }); // placeholder for badge count
+            updateNotifBadge();
+        }
+    } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════
+//  SUPABASE REALTIME
+// ══════════════════════════════════════════════════════════
+let realtimeChannel = null;
+
+function subscribeToRealtime() {
+    if (!currentUser?.user_id || realtimeChannel) return;
+    try {
+        realtimeChannel = supabaseClient.channel('notifications-' + currentUser.user_id)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notifications',
+                filter: `target_user_id=eq.${currentUser.user_id}`
+            }, (payload) => {
+                const n = payload.new;
+                notifCache.unshift(n);
+                updateNotifBadge();
+                // Show toast notification
+                showNotificationToast(n);
+                // Browser notification
+                sendBrowserNotification(n);
+                // If on notifications page, reload
+                if (currentSection === 'notifications') loadNotifications();
+            })
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'messages'
+            }, (payload) => {
+                const msg = payload.new;
+                if (msg.receiver_id === currentUser.user_id) {
+                    showToast('New message received', 'success');
+                    if (currentSection === 'chat') loadConversations();
+                }
+            })
+            .subscribe();
+    } catch(e) { console.log('Realtime subscription error:', e); }
+}
+
+function showNotificationToast(n) {
+    const texts = {
+        follow: 'started following you',
+        like: 'liked your post',
+        comment: 'commented on your post',
+        message: 'sent you a message',
+        repost: 'reposted your post'
+    };
+    const text = texts[n.type] || 'sent you a notification';
+    showToast(`Someone ${text}`, 'success');
+}
+
+function sendBrowserNotification(n) {
+    if (Notification.permission !== 'granted') return;
+    const texts = {
+        follow: 'started following you',
+        like: 'liked your post',
+        comment: 'commented on your post',
+        message: 'sent you a message',
+        repost: 'reposted your post'
+    };
+    try {
+        new Notification('NISLink', {
+            body: `Someone ${texts[n.type] || 'notified you'}`,
+            icon: '/assets/icon-192.png',
+            badge: '/assets/icon-192.png'
+        });
+    } catch(e) {}
+}
+
+function requestBrowserNotifPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+// ══════════════════════════════════════════════════════════
+//  QUICK POST MODAL (mobile + button)
+// ══════════════════════════════════════════════════════════
+function openQuickPostModal() {
+    document.getElementById('quick-post-modal')?.classList.remove('hidden');
+    document.getElementById('quick-post-content')?.focus();
+    lucide.createIcons();
+}
+
+function closeQuickPostModal() {
+    document.getElementById('quick-post-modal')?.classList.add('hidden');
+    const c = document.getElementById('quick-post-content');
+    if (c) c.value = '';
+}
+
+async function submitQuickPost() {
+    const content = document.getElementById('quick-post-content')?.value?.trim();
+    if (!content) return;
+    try {
+        await sbCreatePost(currentUser.user_id, content);
+        closeQuickPostModal();
+        showToast('Post published!', 'success');
+        if (currentSection === 'feed') loadPosts(true);
+    } catch(e) { showToast('Failed to post.', 'error'); }
+}
+
+// Init realtime + notifications on DOMContentLoaded  
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        subscribeToRealtime();
+        fetchUnreadNotifCount();
+        requestBrowserNotifPermission();
+    }, 2000);
+});

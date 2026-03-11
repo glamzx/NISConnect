@@ -314,7 +314,8 @@ async function loadProfile(userId) {
         document.getElementById('profile-avatar-img').src = avatarUrl;
         document.getElementById('profile-display-name').textContent = u.full_name || '—';
         document.getElementById('profile-display-branch').textContent = u.nis_branch || '';
-        document.getElementById('profile-display-year').textContent = u.graduation_year ? `'${String(u.graduation_year).slice(2)}` : '';
+        const yearEl = document.getElementById('profile-display-year');
+        if (u.graduation_year) { yearEl.innerHTML = `<em class="font-display italic">NIS ${String(u.graduation_year).slice(2)}'</em>`; } else { yearEl.textContent = ''; }
         document.getElementById('profile-display-bio').textContent = u.bio || '—';
         document.getElementById('profile-display-uni').textContent = u.university || '—';
         document.getElementById('profile-display-degree').textContent = u.degree_major || '—';
@@ -334,8 +335,9 @@ async function loadProfile(userId) {
         const isOwnProfile = (userId === currentUser?.user_id);
         const coverLabel = document.getElementById('cover-upload-label');
         const avatarLabel = document.getElementById('profile-avatar-upload-label');
-        if (isOwnProfile) { coverLabel?.classList.remove('hidden'); avatarLabel?.classList.remove('hidden'); setupProfileUploads(); }
-        else { coverLabel?.classList.add('hidden'); avatarLabel?.classList.add('hidden'); }
+        const editBtn = document.getElementById('profile-edit-btn');
+        if (isOwnProfile) { coverLabel?.classList.remove('hidden'); avatarLabel?.classList.remove('hidden'); editBtn?.classList.remove('hidden'); setupProfileUploads(); }
+        else { coverLabel?.classList.add('hidden'); avatarLabel?.classList.add('hidden'); editBtn?.classList.add('hidden'); }
 
         const followWrap = document.getElementById('profile-follow-wrap');
         if (!isOwnProfile) { followWrap.classList.remove('hidden'); loadFollowStatus(userId); }
@@ -513,6 +515,7 @@ function setupSettings() {
             degree_major: document.getElementById('s-degree').value.trim(),
             bio: document.getElementById('s-bio').value.trim(),
             status: document.getElementById('s-status').value.trim(),
+            birthday: document.getElementById('s-birthday').value || null,
             linkedin: document.getElementById('s-linkedin').value.trim(),
             instagram: document.getElementById('s-instagram').value.trim(),
             youtube: document.getElementById('s-youtube').value.trim(),
@@ -535,6 +538,7 @@ async function loadSettings() {
         document.getElementById('s-degree').value = u.degree_major || '';
         document.getElementById('s-bio').value = u.bio || '';
         document.getElementById('s-status').value = u.status || '';
+        document.getElementById('s-birthday').value = u.birthday || '';
         document.getElementById('s-linkedin').value = u.linkedin || '';
         document.getElementById('s-instagram').value = u.instagram || '';
         document.getElementById('s-youtube').value = u.youtube || '';
@@ -639,10 +643,24 @@ async function openChat(userId) {
     document.getElementById('chat-header')?.classList.remove('hidden');
     document.getElementById('chat-messages')?.classList.remove('hidden');
     document.getElementById('chat-input-area')?.classList.remove('hidden');
+    // Mobile: show thread, hide sidebar
+    if (window.innerWidth < 768) {
+        document.getElementById('chat-sidebar')?.classList.add('hidden');
+        document.getElementById('chat-thread')?.classList.remove('hidden');
+        document.getElementById('chat-thread')?.classList.add('flex');
+    }
     await loadMessages(userId);
     loadConversations();
     chatPollInterval = setInterval(() => loadMessages(userId), 5000);
     lucide.createIcons();
+}
+
+function closeMobileChat() {
+    document.getElementById('chat-sidebar')?.classList.remove('hidden');
+    if (window.innerWidth < 768) {
+        document.getElementById('chat-thread')?.classList.add('hidden');
+        document.getElementById('chat-thread')?.classList.remove('flex');
+    }
 }
 
 async function loadMessages(userId) {

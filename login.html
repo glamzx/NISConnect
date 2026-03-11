@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Log In — NIS Alumni</title>
-    <meta name="description" content="Sign in to your NIS Alumni account." />
+    <title>Log In — NISLink</title>
+    <meta name="description" content="Sign in to your NISLink account." />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -56,7 +56,7 @@
                 <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
                     <span class="font-display font-900 text-navy text-lg">N</span>
                 </div>
-                <span class="font-display font-bold text-xl text-navy">NIS Alumni</span>
+                <span class="font-display font-bold text-xl text-navy">NISLink</span>
             </div>
 
             <h2 class="font-display font-800 text-3xl text-navy mb-2">Sign in</h2>
@@ -64,9 +64,9 @@
 
             <form id="login-form" class="space-y-5">
                 <div>
-                    <label for="email" class="form-label">Email address</label>
-                    <input type="email" id="email" name="email" required autocomplete="email" class="form-input"
-                        placeholder="you@example.com" />
+                    <label for="login-identifier" class="form-label">Email or @username</label>
+                    <input type="text" id="login-identifier" name="login-identifier" required autocomplete="email" class="form-input"
+                        placeholder="you@example.com or @username" />
                 </div>
 
                 <div>

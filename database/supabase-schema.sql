@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   youtube       TEXT,
   avatar_url    TEXT,
   cover_url     TEXT,
+  birthday      DATE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );

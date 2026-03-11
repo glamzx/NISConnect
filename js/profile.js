@@ -38,7 +38,8 @@ async function loadProfile() {
         const p = await sbGetProfile(userId);
         setTextById('profile-name', p.full_name || 'NIS Alumni');
         setTextById('profile-branch', p.nis_branch ? `NIS ${p.nis_branch}` : '');
-        setTextById('profile-year', p.graduation_year ? `Class of ${p.graduation_year}` : '');
+        const yearEl = document.getElementById('profile-year');
+        if (p.graduation_year) { yearEl.innerHTML = `<em class="font-display italic">NIS ${String(p.graduation_year).slice(2)}'</em>`; } else { yearEl.textContent = ''; }
         setTextById('profile-university', p.university || '—');
         setTextById('profile-degree', p.degree_major || '—');
         setTextById('profile-bio', p.bio || 'No bio yet.');

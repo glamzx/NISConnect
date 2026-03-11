@@ -1,18 +1,17 @@
 /**
- * NIS Connect — Auth JavaScript (Supabase)
+ * NISLink — Auth JavaScript (Supabase)
  * Login & registration form handlers using Supabase Auth.
+ * Supports login with email OR @username.
  */
 
 // ── Toast helper ────────────────────────────────────────────
 function showToast(message, type = 'success') {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
-
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
     document.body.appendChild(toast);
-
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(-10px)';
@@ -21,12 +20,10 @@ function showToast(message, type = 'success') {
     }, 3500);
 }
 
-// ── Check if already logged in (redirect to dashboard) ──────
+// ── Check if already logged in ──────────────────────────────
 (async () => {
     const session = await sbGetSession();
-    if (session) {
-        window.location.href = 'dashboard.html';
-    }
+    if (session) window.location.href = 'dashboard.html';
 })();
 
 // ── Login form ──────────────────────────────────────────────
@@ -38,10 +35,29 @@ if (loginForm) {
         btn.disabled = true;
         btn.textContent = 'Signing in…';
 
-        const email = loginForm.email.value.trim();
+        const identifier = document.getElementById('login-identifier').value.trim();
         const password = loginForm.password.value;
 
         try {
+            let email = identifier;
+
+            // If starts with @, look up email by username
+            if (identifier.startsWith('@')) {
+                const username = identifier.slice(1).toLowerCase();
+                const { data, error } = await supabaseClient
+                    .from('profiles')
+                    .select('email')
+                    .eq('username', username)
+                    .maybeSingle();
+                if (error || !data) {
+                    showToast('Username not found.', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In';
+                    return;
+                }
+                email = data.email;
+            }
+
             await sbSignIn(email, password);
             showToast('Welcome back!', 'success');
             setTimeout(() => window.location.href = 'dashboard.html', 800);
@@ -57,7 +73,6 @@ if (loginForm) {
 // ── Registration form ───────────────────────────────────────
 const registerForm = document.getElementById('register-form');
 if (registerForm) {
-    // Live username availability check
     const usernameInput = document.getElementById('username');
     const usernameStatus = document.getElementById('username-status');
     let usernameTimer;
@@ -65,16 +80,10 @@ if (registerForm) {
     usernameInput?.addEventListener('input', () => {
         clearTimeout(usernameTimer);
         const val = usernameInput.value.trim().toLowerCase();
-
-        if (val.length < 3) {
-            usernameStatus.classList.add('hidden');
-            return;
-        }
-
+        if (val.length < 3) { usernameStatus.classList.add('hidden'); return; }
         usernameStatus.classList.remove('hidden');
         usernameStatus.textContent = '...';
         usernameStatus.className = 'absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400';
-
         usernameTimer = setTimeout(async () => {
             try {
                 const result = await sbCheckUsername(val);
@@ -103,51 +112,40 @@ if (registerForm) {
         const username = registerForm.username.value.trim().toLowerCase();
         const nisBranch = registerForm.nis_branch.value;
         const gradYear = registerForm.graduation_year.value;
+        const birthday = registerForm.birthday?.value || null;
 
-        // Client-side validation
         if (password.length < 6) {
             showToast('Password must be at least 6 characters.', 'error');
-            btn.disabled = false;
-            btn.textContent = 'Create Account';
-            return;
+            btn.disabled = false; btn.textContent = 'Create Account'; return;
         }
         if (password !== confirmPassword) {
             showToast('Passwords do not match.', 'error');
-            btn.disabled = false;
-            btn.textContent = 'Create Account';
-            return;
+            btn.disabled = false; btn.textContent = 'Create Account'; return;
         }
         if (!/^[a-zA-Z0-9_]{3,30}$/.test(username)) {
             showToast('Username must be 3-30 characters (letters, numbers, underscores).', 'error');
-            btn.disabled = false;
-            btn.textContent = 'Create Account';
-            return;
+            btn.disabled = false; btn.textContent = 'Create Account'; return;
         }
 
-        // Check username
         try {
             const check = await sbCheckUsername(username);
             if (!check.available) {
                 showToast('Username is already taken.', 'error');
-                btn.disabled = false;
-                btn.textContent = 'Create Account';
-                return;
+                btn.disabled = false; btn.textContent = 'Create Account'; return;
             }
         } catch { }
 
         try {
             const data = await sbSignUp(email, password, fullName, username);
-
-            // Update profile with extra fields
             if (data.user) {
                 await sbUpdateProfile(data.user.id, {
                     nis_branch: nisBranch || null,
                     graduation_year: gradYear ? parseInt(gradYear) : null,
                     full_name: fullName,
                     username,
+                    birthday: birthday || null,
                 });
             }
-
             showToast('Account created! Redirecting…', 'success');
             setTimeout(() => window.location.href = 'dashboard.html', 800);
         } catch (err) {

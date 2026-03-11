@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign Up — NIS Alumni</title>
-    <meta name="description" content="Create your NIS Alumni account and join the community." />
+    <title>Sign Up — NISLink</title>
+    <meta name="description" content="Create your NISLink account and join the community." />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -55,7 +55,7 @@
                 <div class="w-10 h-10 bg-accent rounded-full flex items-center justify-center">
                     <span class="font-display font-900 text-navy text-lg">N</span>
                 </div>
-                <span class="font-display font-bold text-xl text-navy">NIS Alumni</span>
+                <span class="font-display font-bold text-xl text-navy">NISLink</span>
             </div>
 
             <h2 class="font-display font-800 text-3xl text-navy mb-2">Create account</h2>
@@ -119,8 +119,7 @@
                         <select id="graduation_year" name="graduation_year" class="form-input">
                             <option value="" disabled selected>Year</option>
                             <script>
-                                const sel = document.currentScript.parentElement.querySelector('select') || document.getElementById('graduation_year');
-                                for (let y = 2026; y >= 2008; y--) {
+                                for (let y = 2035; y >= 2008; y--) {
                                     const opt = document.createElement('option');
                                     opt.value = y; opt.textContent = y;
                                     document.getElementById('graduation_year').appendChild(opt);
@@ -128,6 +127,11 @@
                             </script>
                         </select>
                     </div>
+                </div>
+
+                <div>
+                    <label for="birthday" class="form-label">Birthday</label>
+                    <input type="date" id="birthday" name="birthday" class="form-input" />
                 </div>
 
                 <div>

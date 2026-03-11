@@ -835,3 +835,47 @@ body {
 .dark .text-accent {
   color: #C8FF00 !important;
 }
+
+/* ═══ MOBILE RESPONSIVE ═══ */
+@media (max-width: 767px) {
+  /* Chat: sidebar full width, thread hidden until opened */
+  #chat-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Profile header stack on mobile */
+  #section-profile .flex.items-end.gap-4 {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #section-profile .pt-14 {
+    padding-top: 0.5rem;
+  }
+
+  /* Bottom nav spacing */
+  .mobile-nav-item {
+    font-size: 0.65rem;
+  }
+
+  /* Fix overflow on mobile */
+  #section-feed,
+  #section-alumni,
+  #section-profile,
+  #section-settings {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Chat input area */
+  #chat-input-area {
+    padding: 0.75rem 1rem !important;
+    position: sticky;
+    bottom: 0;
+  }
+
+  #chat-messages {
+    padding: 1rem !important;
+  }
+}

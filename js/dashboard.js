@@ -1648,12 +1648,20 @@ async function getPostOwnerId(postId) {
 async function fetchUnreadMessageCount() {
     if (!currentUser?.user_id) return;
     try {
+        // Get all conversations the user is part of
+        const { data: convs } = await supabaseClient.from('conversations')
+            .select('id')
+            .or(`user_a.eq.${currentUser.user_id},user_b.eq.${currentUser.user_id}`);
+        if (!convs?.length) { updateChatBadge(0); return; }
+        const convIds = convs.map(c => c.id);
+        // Count messages in those conversations NOT sent by me with no read_at
         const { count } = await supabaseClient.from('messages')
             .select('id', { count: 'exact', head: true })
-            .eq('receiver_id', currentUser.user_id)
-            .eq('read', false);
+            .in('conversation_id', convIds)
+            .neq('sender_id', currentUser.user_id)
+            .is('read_at', null);
         updateChatBadge(count || 0);
-    } catch(e) {}
+    } catch(e) { console.log('fetchUnreadMessageCount error:', e); }
 }
 
 function updateChatBadge(count) {

@@ -23,6 +23,7 @@ async function sbSignUp(email, password, fullName, username) {
         password,
         options: {
             data: { full_name: fullName, username },
+            emailRedirectTo: window.location.origin + '/NISConnect/verify.html',
         },
     });
     if (error) throw error;

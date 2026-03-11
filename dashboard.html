@@ -664,6 +664,31 @@
                             </div>
                         </div>
 
+
+                        <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+                            <h3 class="font-display font-bold text-navy text-sm mb-4">Privacy & Online</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="form-label">Who can post on your wall</label>
+                                    <select id="s-wall-privacy" name="wall_privacy" class="form-input">
+                                        <option value="everyone">Everyone</option>
+                                        <option value="friends">Friends (mutual followers)</option>
+                                        <option value="only_me">Only Me</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <label class="form-label mb-0">Show Online Status</label>
+                                        <p class="text-xs text-gray-400">Turn off for ghost mode</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="s-show-online" checked class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-accent/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-navy after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="flex justify-end">
                             <button type="submit"
                                 class="px-8 py-3 bg-navy text-white font-semibold rounded-full hover:bg-navy-light transition text-sm">
@@ -790,6 +815,31 @@
                         Delete
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repost Modal -->
+    <div id="repost-modal" class="hidden fixed inset-0 z-[95] bg-black/50 flex items-center justify-center"
+        onclick="if(event.target===this)closeRepostModal()">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl dark:bg-gray-800 mx-4">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <i data-lucide="repeat-2" class="w-5 h-5 text-green-500"></i>
+                </div>
+                <h3 class="font-display font-bold text-lg text-navy dark:text-white">Repost</h3>
+            </div>
+            <p class="text-gray-500 text-sm mb-3">Add your thoughts (optional):</p>
+            <textarea id="repost-text" rows="3" class="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-accent/30 resize-none mb-4 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="What do you think about this?"></textarea>
+            <div class="flex gap-3">
+                <button onclick="closeRepostModal()"
+                    class="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-full hover:bg-gray-200 transition text-sm dark:bg-gray-700 dark:text-gray-300">
+                    Cancel
+                </button>
+                <button onclick="submitRepost()"
+                    class="flex-1 px-4 py-2.5 bg-green-500 text-white font-semibold rounded-full hover:bg-green-600 transition text-sm">
+                    Repost
+                </button>
             </div>
         </div>
     </div>

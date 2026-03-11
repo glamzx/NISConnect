@@ -97,7 +97,9 @@ async function sbGetFeedPosts() {
             profiles!posts_user_id_fkey ( full_name, avatar_url, nis_branch, username ),
             post_attachments ( id, file_path, file_type, original_name ),
             post_likes ( id, user_id ),
-            post_comments ( id )
+            post_comments ( id ),
+            post_views ( id, viewer_id ),
+            reposts ( id, user_id, repost_text )
         `)
         .order('created_at', { ascending: false })
         .limit(50);

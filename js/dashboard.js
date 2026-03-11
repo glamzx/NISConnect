@@ -185,7 +185,7 @@ async function loadPosts(reset = false) {
                 container.innerHTML = '<div class="text-center py-12 text-gray-400"><p>Follow people to see their posts here!</p></div>';
                 return;
             }
-            const { data } = await supabaseClient.from('posts').select('*, profiles(*), post_likes(*), post_comments(*)').in('user_id', followedIds).order('created_at', { ascending: false }).limit(50);
+            const { data } = await supabaseClient.from('posts').select('*, profiles(*), post_likes(*), post_comments(*), post_attachments(*), post_views(*), reposts(*)').in('user_id', followedIds).order('created_at', { ascending: false }).limit(50);
             posts = data || [];
         } else {
             posts = await sbGetFeedPosts();
@@ -212,6 +212,9 @@ function createPostCard(post) {
     const likeCount = post.post_likes?.length || 0;
     const commentCount = post.post_comments?.length || 0;
     const isLiked = post.post_likes?.some(l => l.user_id === currentUser?.user_id);
+    const viewCount = post.post_views?.length || 0;
+    const repostCount = post.reposts?.length || 0;
+    const isReposted = post.reposts?.some(r => r.user_id === currentUser?.user_id);
     let attachHtml = '';
     if (post.post_attachments?.length) {
         attachHtml = '<div class="flex flex-wrap gap-2 mt-3">' +
@@ -222,8 +225,15 @@ function createPostCard(post) {
                 return `<a href="${att.file_path}" target="_blank" class="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2 text-xs text-gray-600 hover:bg-gray-200 transition">📎 ${att.original_name || 'File'}</a>`;
             }).join('') + '</div>';
     }
+    // Repost indicator
+    let repostIndicator = '';
+    if (post._repostedBy) {
+        repostIndicator = `<div class="flex items-center gap-1.5 text-xs text-gray-400 mb-2"><i data-lucide="repeat-2" class="w-3 h-3"></i> ${escHtml(post._repostedBy)} reposted</div>`;
+        if (post._repostText) repostIndicator += `<p class="text-sm text-gray-500 italic mb-2 pl-3 border-l-2 border-accent">${escHtml(post._repostText)}</p>`;
+    }
     const deleteBtn = (post.user_id === currentUser?.user_id) ? `<button onclick="deletePost(${post.id}, this)" class="text-gray-300 hover:text-red-500 transition ml-auto"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : '';
     div.innerHTML = `
+    ${repostIndicator}
     <div class="flex items-start gap-3">
       <img src="${avatarUrl}" class="w-10 h-10 rounded-full object-cover shrink-0 cursor-pointer" onclick="navigateTo('profile','${post.user_id}')" />
       <div class="flex-1 min-w-0">
@@ -245,6 +255,14 @@ function createPostCard(post) {
             <i data-lucide="message-circle" class="w-4 h-4"></i>
             <span class="comment-count">${commentCount || ''}</span>
           </button>
+          <button onclick="openRepostModal(${post.id})" class="flex items-center gap-1.5 text-sm ${isReposted ? 'text-green-500' : 'text-gray-400 hover:text-green-500'} transition">
+            <i data-lucide="repeat-2" class="w-4 h-4"></i>
+            <span>${repostCount || ''}</span>
+          </button>
+          <span class="flex items-center gap-1 text-xs text-gray-300 ml-auto">
+            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+            <span class="view-count">${viewCount || 0}</span>
+          </span>
         </div>
         <div id="comments-${post.id}" class="comments-section hidden mt-3">
           <div class="comments-list space-y-3"></div>
@@ -255,6 +273,8 @@ function createPostCard(post) {
         </div>
       </div>
     </div>`;
+    // Track view
+    if (currentUser?.user_id) trackPostView(post.id);
     return div;
 }
 
@@ -540,15 +560,24 @@ async function loadWallPosts(userId) {
 //  LIKE & COMMENT FUNCTIONS
 // ══════════════════════════════════════════════════════════
 async function toggleLike(postId, btn) {
-    try {
-        const result = await sbToggleLike(postId, currentUser.user_id);
-        const countEl = btn.querySelector('.like-count');
-        const iconEl = btn.querySelector('[data-lucide]');
-        const { count } = await supabaseClient.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
-        countEl.textContent = count || '';
-        if (result.liked) { btn.classList.remove('text-gray-400'); btn.classList.add('text-red-500'); btn.dataset.liked = '1'; iconEl.classList.add('fill-red-500'); }
-        else { btn.classList.add('text-gray-400'); btn.classList.remove('text-red-500'); btn.dataset.liked = '0'; iconEl.classList.remove('fill-red-500'); }
-    } catch { }
+    // Optimistic UI: toggle immediately
+    const countEl = btn.querySelector('.like-count');
+    const iconEl = btn.querySelector('[data-lucide]');
+    const wasLiked = btn.dataset.liked === '1';
+    const currentCount = parseInt(countEl.textContent) || 0;
+    if (wasLiked) {
+        btn.classList.add('text-gray-400'); btn.classList.remove('text-red-500');
+        btn.dataset.liked = '0'; iconEl.classList.remove('fill-red-500');
+        countEl.textContent = Math.max(0, currentCount - 1) || '';
+    } else {
+        btn.classList.remove('text-gray-400'); btn.classList.add('text-red-500');
+        btn.dataset.liked = '1'; iconEl.classList.add('fill-red-500');
+        countEl.textContent = currentCount + 1;
+        btn.style.transform = 'scale(1.2)';
+        setTimeout(() => btn.style.transform = '', 200);
+    }
+    // Server call in background
+    try { await sbToggleLike(postId, currentUser.user_id); } catch { }
 }
 
 function toggleCommentSection(postId) {
@@ -600,6 +629,83 @@ async function deleteComment(commentId, postId) {
         if (postCard) { const countEl = postCard.querySelector('.comment-count'); const curr = parseInt(countEl.textContent || '1'); countEl.textContent = curr > 1 ? curr - 1 : ''; }
     } catch { }
 }
+
+// ══════════════════════════════════════════════════════════
+//  POST VIEWS (eye counter)
+// ══════════════════════════════════════════════════════════
+async function trackPostView(postId) {
+    try {
+        await supabaseClient.from('post_views').upsert(
+            { post_id: postId, viewer_id: currentUser.user_id },
+            { onConflict: 'post_id,viewer_id', ignoreDuplicates: true }
+        );
+    } catch { }
+}
+
+// ══════════════════════════════════════════════════════════
+//  REPOST
+// ══════════════════════════════════════════════════════════
+let pendingRepostId = null;
+
+function openRepostModal(postId) {
+    pendingRepostId = postId;
+    document.getElementById('repost-modal')?.classList.remove('hidden');
+    document.getElementById('repost-text')?.focus();
+}
+
+function closeRepostModal() {
+    pendingRepostId = null;
+    document.getElementById('repost-modal')?.classList.add('hidden');
+    const textEl = document.getElementById('repost-text');
+    if (textEl) textEl.value = '';
+}
+
+async function submitRepost() {
+    if (!pendingRepostId || !currentUser?.user_id) return;
+    const text = document.getElementById('repost-text')?.value?.trim() || '';
+    const btn = document.querySelector('#repost-modal button[onclick="submitRepost()"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Reposting…'; }
+    try {
+        await supabaseClient.from('reposts').upsert(
+            { user_id: currentUser.user_id, original_post_id: pendingRepostId, repost_text: text },
+            { onConflict: 'user_id,original_post_id' }
+        );
+        showToast('Reposted!', 'success');
+        closeRepostModal();
+        loadPosts(true);
+    } catch { showToast('Repost failed.', 'error'); }
+    if (btn) { btn.disabled = false; btn.textContent = 'Repost'; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  ONLINE STATUS
+// ══════════════════════════════════════════════════════════
+function updateOnlineStatus() {
+    if (!currentUser?.user_id) return;
+    supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.user_id).then(() => {});
+}
+// Heartbeat: update last_seen every 60 seconds
+setInterval(updateOnlineStatus, 60000);
+
+// ══════════════════════════════════════════════════════════
+//  BROWSER NOTIFICATIONS
+// ══════════════════════════════════════════════════════════
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+function sendBrowserNotification(title, body) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, { body, icon: '/images/logo.png' });
+    }
+}
+
+// Request notifications on page load
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(requestNotificationPermission, 3000);
+});
 
 // ── Profile uploads (avatar + cover) ──
 let profileUploadsSetup = false;
@@ -683,6 +789,8 @@ function setupSettings() {
             work_status: document.getElementById('s-work-status')?.value || null,
             company: document.getElementById('s-company')?.value?.trim() || null,
             workfield: document.getElementById('s-workfield')?.value?.trim() || null,
+            wall_privacy: document.getElementById('s-wall-privacy')?.value || 'everyone',
+            show_online: document.getElementById('s-show-online')?.checked ?? true,
             linkedin: document.getElementById('s-linkedin').value.trim(),
             instagram: document.getElementById('s-instagram').value.trim(),
             youtube: document.getElementById('s-youtube').value.trim(),
@@ -712,6 +820,8 @@ async function loadSettings() {
         if (document.getElementById('s-work-status')) document.getElementById('s-work-status').value = u.work_status || '';
         if (document.getElementById('s-company')) document.getElementById('s-company').value = u.company || '';
         if (document.getElementById('s-workfield')) document.getElementById('s-workfield').value = u.workfield || '';
+        if (document.getElementById('s-wall-privacy')) document.getElementById('s-wall-privacy').value = u.wall_privacy || 'everyone';
+        if (document.getElementById('s-show-online')) document.getElementById('s-show-online').checked = u.show_online !== false;
         // Disable university if not yet graduated (June 1st rule)
         const gradYear = u.graduation_year;
         const now = new Date();

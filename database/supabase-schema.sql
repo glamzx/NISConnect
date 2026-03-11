@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS profiles (
   company       TEXT,
   workfield     TEXT,
   gender        TEXT,
+  wall_privacy  TEXT DEFAULT 'everyone', -- everyone, friends, only_me
+  show_online   BOOLEAN DEFAULT true,    -- ghost mode when false
+  last_seen     TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -53,6 +56,29 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- -----------------------------------------------------------
+-- Reposts
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reposts (
+  id               BIGSERIAL PRIMARY KEY,
+  user_id          UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  original_post_id BIGINT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  repost_text      TEXT DEFAULT '',
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, original_post_id)
+);
+
+-- -----------------------------------------------------------
+-- Post Views
+-- -----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS post_views (
+  id         BIGSERIAL PRIMARY KEY,
+  post_id    BIGINT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  viewer_id  UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  viewed_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(post_id, viewer_id)
+);
 
 -- -----------------------------------------------------------
 -- Posts

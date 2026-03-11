@@ -238,7 +238,7 @@ function setupAlumniControls() {} // search handled inline
 async function loadAlumni(reset = false) {
     const search = document.getElementById('alumni-search')?.value?.toLowerCase() || '';
     try {
-        let query = supabase.from('profiles').select('*').order('full_name');
+        let query = supabaseClient.from('profiles').select('*').order('full_name');
         if (search) query = query.or(`full_name.ilike.%${search}%,nis_branch.ilike.%${search}%,username.ilike.%${search}%`);
         const { data: users, error } = await query.limit(50);
         if (error) throw error;
@@ -416,7 +416,7 @@ async function toggleLike(postId, btn) {
         const result = await sbToggleLike(postId, currentUser.user_id);
         const countEl = btn.querySelector('.like-count');
         const iconEl = btn.querySelector('[data-lucide]');
-        const { count } = await supabase.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+        const { count } = await supabaseClient.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
         countEl.textContent = count || '';
         if (result.liked) { btn.classList.remove('text-gray-400'); btn.classList.add('text-red-500'); btn.dataset.liked = '1'; iconEl.classList.add('fill-red-500'); }
         else { btn.classList.add('text-gray-400'); btn.classList.remove('text-red-500'); btn.dataset.liked = '0'; iconEl.classList.remove('fill-red-500'); }

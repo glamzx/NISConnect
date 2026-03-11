@@ -204,7 +204,7 @@ async function toggleLike(postId, btn) {
         const result = await sbToggleLike(postId, currentUser.user_id);
         const countEl = btn.querySelector('.like-count');
         const iconEl = btn.querySelector('[data-lucide]');
-        const { count } = await supabase.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
+        const { count } = await supabaseClient.from('post_likes').select('*', { count: 'exact', head: true }).eq('post_id', postId);
         countEl.textContent = count || '';
         if (result.liked) { btn.classList.remove('text-gray-400'); btn.classList.add('text-red-500'); iconEl.classList.add('fill-red-500'); }
         else { btn.classList.add('text-gray-400'); btn.classList.remove('text-red-500'); iconEl.classList.remove('fill-red-500'); }

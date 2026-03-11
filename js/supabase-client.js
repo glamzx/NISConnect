@@ -1,37 +1,24 @@
 /**
  * NIS Connect — Supabase Client
  * Central config + helper functions for all Supabase operations.
+ * NOTE: We use 'supabaseClient' (not 'supabase') because
+ * the UMD bundle already creates a global 'var supabase'.
  */
 
 // ══════════════════════════════════════════════════════════
-//  SUPABASE CONFIG — Replace with your project credentials
+//  SUPABASE CONFIG
 // ══════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://cycemjhtxvcigrhrnvaw.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5Y2Vtamh0eHZjaWdyaHJudmF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjA4MTAsImV4cCI6MjA4ODc5NjgxMH0.c3ltBmWmkgDE0c2HfHPwwyAOIclZPX8p05YecPRUnyY';
 
-let supabase;
-try {
-    // Debug: log what the CDN exposes
-    console.log('[NIS] window.supabase =', typeof window.supabase, window.supabase);
-    const sb = window.supabase;
-    if (sb && typeof sb.createClient === 'function') {
-        supabase = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } else if (sb && sb.default && typeof sb.default.createClient === 'function') {
-        supabase = sb.default.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } else {
-        console.error('[NIS] Could not find createClient. window.supabase keys:', sb ? Object.keys(sb) : 'undefined');
-    }
-    console.log('[NIS] Supabase client created:', !!supabase);
-} catch (e) {
-    console.error('[NIS] Failed to init Supabase:', e);
-}
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ══════════════════════════════════════════════════════════
 //  AUTH HELPERS
 // ══════════════════════════════════════════════════════════
 
 async function sbSignUp(email, password, fullName, username) {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -43,23 +30,23 @@ async function sbSignUp(email, password, fullName, username) {
 }
 
 async function sbSignIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return data;
 }
 
 async function sbSignOut() {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
 }
 
 async function sbGetSession() {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     return session;
 }
 
 async function sbGetUser() {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await supabaseClient.auth.getUser();
     return user;
 }
 
@@ -68,7 +55,7 @@ async function sbGetUser() {
 // ══════════════════════════════════════════════════════════
 
 async function sbGetProfile(userId) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -78,7 +65,7 @@ async function sbGetProfile(userId) {
 }
 
 async function sbUpdateProfile(userId, updates) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('profiles')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', userId)
@@ -89,7 +76,7 @@ async function sbUpdateProfile(userId, updates) {
 }
 
 async function sbCheckUsername(username) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('profiles')
         .select('id')
         .eq('username', username)
@@ -103,7 +90,7 @@ async function sbCheckUsername(username) {
 // ══════════════════════════════════════════════════════════
 
 async function sbGetFeedPosts() {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('posts')
         .select(`
             id, content, created_at, user_id,
@@ -119,7 +106,7 @@ async function sbGetFeedPosts() {
 }
 
 async function sbGetUserPosts(userId) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('posts')
         .select(`
             id, content, created_at, user_id,
@@ -135,7 +122,7 @@ async function sbGetUserPosts(userId) {
 }
 
 async function sbCreatePost(userId, content) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('posts')
         .insert({ user_id: userId, content })
         .select()
@@ -145,7 +132,7 @@ async function sbCreatePost(userId, content) {
 }
 
 async function sbDeletePost(postId) {
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('posts')
         .delete()
         .eq('id', postId);
@@ -153,7 +140,7 @@ async function sbDeletePost(postId) {
 }
 
 async function sbAddAttachment(postId, filePath, fileType, originalName) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('post_attachments')
         .insert({ post_id: postId, file_path: filePath, file_type: fileType, original_name: originalName })
         .select()
@@ -167,8 +154,7 @@ async function sbAddAttachment(postId, filePath, fileType, originalName) {
 // ══════════════════════════════════════════════════════════
 
 async function sbToggleLike(postId, userId) {
-    // Check if already liked
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseClient
         .from('post_likes')
         .select('id')
         .eq('post_id', postId)
@@ -176,10 +162,10 @@ async function sbToggleLike(postId, userId) {
         .maybeSingle();
 
     if (existing) {
-        await supabase.from('post_likes').delete().eq('id', existing.id);
+        await supabaseClient.from('post_likes').delete().eq('id', existing.id);
         return { liked: false };
     } else {
-        await supabase.from('post_likes').insert({ post_id: postId, user_id: userId });
+        await supabaseClient.from('post_likes').insert({ post_id: postId, user_id: userId });
         return { liked: true };
     }
 }
@@ -189,7 +175,7 @@ async function sbToggleLike(postId, userId) {
 // ══════════════════════════════════════════════════════════
 
 async function sbGetComments(postId) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('post_comments')
         .select(`
             id, content, created_at, user_id,
@@ -202,7 +188,7 @@ async function sbGetComments(postId) {
 }
 
 async function sbAddComment(postId, userId, content) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('post_comments')
         .insert({ post_id: postId, user_id: userId, content })
         .select(`
@@ -215,7 +201,7 @@ async function sbAddComment(postId, userId, content) {
 }
 
 async function sbDeleteComment(commentId) {
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('post_comments')
         .delete()
         .eq('id', commentId);
@@ -227,26 +213,26 @@ async function sbDeleteComment(commentId) {
 // ══════════════════════════════════════════════════════════
 
 async function sbGetFollowStatus(currentUserId, targetUserId) {
-    const { data: iFollow } = await supabase
+    const { data: iFollow } = await supabaseClient
         .from('subscriptions')
         .select('id')
         .eq('follower_id', currentUserId)
         .eq('following_id', targetUserId)
         .maybeSingle();
 
-    const { data: followsMe } = await supabase
+    const { data: followsMe } = await supabaseClient
         .from('subscriptions')
         .select('id')
         .eq('follower_id', targetUserId)
         .eq('following_id', currentUserId)
         .maybeSingle();
 
-    const { count: followerCount } = await supabase
+    const { count: followerCount } = await supabaseClient
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
         .eq('following_id', targetUserId);
 
-    const { count: followingCount } = await supabase
+    const { count: followingCount } = await supabaseClient
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
         .eq('follower_id', targetUserId);
@@ -261,14 +247,14 @@ async function sbGetFollowStatus(currentUserId, targetUserId) {
 }
 
 async function sbFollow(followerId, followingId) {
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('subscriptions')
         .insert({ follower_id: followerId, following_id: followingId });
     if (error) throw error;
 }
 
 async function sbUnfollow(followerId, followingId) {
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('subscriptions')
         .delete()
         .eq('follower_id', followerId)
@@ -278,7 +264,7 @@ async function sbUnfollow(followerId, followingId) {
 
 async function sbGetFollowList(userId, type) {
     if (type === 'followers') {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('subscriptions')
             .select('profiles!subscriptions_follower_id_fkey ( id, full_name, avatar_url, username, nis_branch )')
             .eq('following_id', userId)
@@ -286,7 +272,7 @@ async function sbGetFollowList(userId, type) {
         if (error) throw error;
         return data.map(d => d.profiles);
     } else {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('subscriptions')
             .select('profiles!subscriptions_following_id_fkey ( id, full_name, avatar_url, username, nis_branch )')
             .eq('follower_id', userId)
@@ -301,19 +287,18 @@ async function sbGetFollowList(userId, type) {
 // ══════════════════════════════════════════════════════════
 
 async function sbGetConversations(userId) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('conversations')
         .select('*')
         .or(`user_a.eq.${userId},user_b.eq.${userId}`)
         .order('updated_at', { ascending: false });
     if (error) throw error;
 
-    // Enrich with other user info and last message
     const enriched = [];
     for (const conv of data) {
         const otherId = conv.user_a === userId ? conv.user_b : conv.user_a;
         const otherUser = await sbGetProfile(otherId);
-        const { data: lastMsgArr } = await supabase
+        const { data: lastMsgArr } = await supabaseClient
             .from('messages')
             .select('content, attachment_type, created_at')
             .eq('conversation_id', conv.id)
@@ -330,7 +315,6 @@ async function sbGetConversations(userId) {
 }
 
 async function sbGetMessages(userId, otherUserId) {
-    // Find conversation
     const convId = await sbFindConversation(userId, otherUserId);
     const otherUser = await sbGetProfile(otherUserId);
 
@@ -338,7 +322,7 @@ async function sbGetMessages(userId, otherUserId) {
         return { messages: [], other_user: otherUser };
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
         .from('messages')
         .select(`
             id, sender_id, content, attachment_path, attachment_type, created_at,
@@ -358,7 +342,7 @@ async function sbSendMessage(userId, recipientId, content, attachmentPath, attac
     if (!convId) {
         const a = userId < recipientId ? userId : recipientId;
         const b = userId < recipientId ? recipientId : userId;
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('conversations')
             .insert({ user_a: a, user_b: b })
             .select()
@@ -367,7 +351,7 @@ async function sbSendMessage(userId, recipientId, content, attachmentPath, attac
         convId = data.id;
     }
 
-    const { data: msg, error: msgErr } = await supabase
+    const { data: msg, error: msgErr } = await supabaseClient
         .from('messages')
         .insert({
             conversation_id: convId,
@@ -383,8 +367,7 @@ async function sbSendMessage(userId, recipientId, content, attachmentPath, attac
         .single();
     if (msgErr) throw msgErr;
 
-    // Touch conversation timestamp
-    await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', convId);
+    await supabaseClient.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', convId);
 
     return msg;
 }
@@ -392,7 +375,7 @@ async function sbSendMessage(userId, recipientId, content, attachmentPath, attac
 async function sbFindConversation(userA, userB) {
     const a = userA < userB ? userA : userB;
     const b = userA < userB ? userB : userA;
-    const { data } = await supabase
+    const { data } = await supabaseClient
         .from('conversations')
         .select('id')
         .eq('user_a', a)
@@ -405,21 +388,22 @@ async function sbFindConversation(userA, userB) {
 //  FILE UPLOAD HELPER
 // ══════════════════════════════════════════════════════════
 
-async function sbUploadFile(file, folder = 'attachments') {
-    const ext = file.name.split('.').pop();
-    const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
+async function sbUploadFile(file, folder) {
+    folder = folder || 'attachments';
+    var ext = file.name.split('.').pop();
+    var fileName = folder + '/' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '.' + ext;
 
-    const { data, error } = await supabase.storage
+    var result = await supabaseClient.storage
         .from('uploads')
         .upload(fileName, file, { upsert: false });
-    if (error) throw error;
+    if (result.error) throw result.error;
 
-    const { data: urlData } = supabase.storage
+    var urlData = supabaseClient.storage
         .from('uploads')
-        .getPublicUrl(data.path);
+        .getPublicUrl(result.data.path);
 
     return {
-        file_path: urlData.publicUrl,
+        file_path: urlData.data.publicUrl,
         file_type: file.type.startsWith('image') ? 'image'
                  : file.type.startsWith('video') ? 'video'
                  : file.type.startsWith('audio') ? 'audio'
@@ -428,55 +412,57 @@ async function sbUploadFile(file, folder = 'attachments') {
     };
 }
 
-// Upload with progress tracking (uses XMLHttpRequest for progress)
-function sbUploadFileWithProgress(file, folder = 'attachments') {
-    return new Promise(async (resolve, reject) => {
-        const ext = file.name.split('.').pop();
-        const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${ext}`;
+// Upload with progress tracking
+function sbUploadFileWithProgress(file, folder) {
+    folder = folder || 'attachments';
+    return new Promise(function(resolve, reject) {
+        var ext = file.name.split('.').pop();
+        var fileName = folder + '/' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '.' + ext;
 
-        const session = await sbGetSession();
-        if (!session) return reject(new Error('Not authenticated'));
+        sbGetSession().then(function(session) {
+            if (!session) return reject(new Error('Not authenticated'));
 
-        const progressBar = document.getElementById('upload-progress-bar');
-        const progressFill = document.getElementById('upload-progress-fill');
-        const progressText = document.getElementById('upload-progress-text');
-        if (progressBar) progressBar.classList.remove('hidden');
+            var progressBar = document.getElementById('upload-progress-bar');
+            var progressFill = document.getElementById('upload-progress-fill');
+            var progressText = document.getElementById('upload-progress-text');
+            if (progressBar) progressBar.classList.remove('hidden');
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `${SUPABASE_URL}/storage/v1/object/uploads/${fileName}`);
-        xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
-        xhr.setRequestHeader('x-upsert', 'false');
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', SUPABASE_URL + '/storage/v1/object/uploads/' + fileName);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + session.access_token);
+            xhr.setRequestHeader('x-upsert', 'false');
 
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable && progressFill && progressText) {
-                const pct = Math.round((e.loaded / e.total) * 100);
-                progressFill.style.width = pct + '%';
-                progressText.textContent = `Uploading… ${pct}%`;
-            }
-        };
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable && progressFill && progressText) {
+                    var pct = Math.round((e.loaded / e.total) * 100);
+                    progressFill.style.width = pct + '%';
+                    progressText.textContent = 'Uploading… ' + pct + '%';
+                }
+            };
 
-        xhr.onload = () => {
-            if (progressBar) setTimeout(() => progressBar.classList.add('hidden'), 1000);
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const { data: urlData } = supabase.storage.from('uploads').getPublicUrl(fileName);
-                resolve({
-                    file_path: urlData.publicUrl,
-                    file_type: file.type.startsWith('image') ? 'image'
-                             : file.type.startsWith('video') ? 'video'
-                             : file.type.startsWith('audio') ? 'audio'
-                             : 'file',
-                    original_name: file.name,
-                });
-            } else {
+            xhr.onload = function() {
+                if (progressBar) setTimeout(function() { progressBar.classList.add('hidden'); }, 1000);
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    var urlData = supabaseClient.storage.from('uploads').getPublicUrl(fileName);
+                    resolve({
+                        file_path: urlData.data.publicUrl,
+                        file_type: file.type.startsWith('image') ? 'image'
+                                 : file.type.startsWith('video') ? 'video'
+                                 : file.type.startsWith('audio') ? 'audio'
+                                 : 'file',
+                        original_name: file.name,
+                    });
+                } else {
+                    reject(new Error('Upload failed'));
+                }
+            };
+
+            xhr.onerror = function() {
+                if (progressBar) progressBar.classList.add('hidden');
                 reject(new Error('Upload failed'));
-            }
-        };
+            };
 
-        xhr.onerror = () => {
-            if (progressBar) progressBar.classList.add('hidden');
-            reject(new Error('Upload failed'));
-        };
-
-        xhr.send(file);
+            xhr.send(file);
+        });
     });
 }

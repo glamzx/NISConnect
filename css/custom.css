@@ -730,13 +730,29 @@ body {
 }
 
 /* Dark nav items */
+.dark .nav-item {
+  color: #9ca3af !important;
+}
+
 .dark .nav-item:hover,
 .dark .mobile-nav-item:hover {
   background-color: #22252f !important;
+  color: #e5e7eb !important;
 }
 
-.dark .nav-item.bg-accent\/10 {
-  background-color: rgba(200, 255, 0, 0.08) !important;
+.dark .nav-item.bg-accent\/10,
+.dark .nav-item.\!text-navy {
+  background-color: rgba(200, 255, 0, 0.1) !important;
+  color: #C8FF00 !important;
+}
+
+.dark .mobile-nav-item {
+  color: #6b7280 !important;
+}
+
+.dark .mobile-nav-item.text-navy,
+.dark .mobile-nav-item.active {
+  color: #C8FF00 !important;
 }
 
 /* Dark dropdown */

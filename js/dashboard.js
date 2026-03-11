@@ -684,7 +684,10 @@ async function toggleFollow() {
     const isFollowing = btn.dataset.following === '1';
     try {
         if (isFollowing) { await sbUnfollow(currentUser.user_id, userId); }
-        else { await sbFollow(currentUser.user_id, userId); }
+        else {
+            await sbFollow(currentUser.user_id, userId);
+            createNotification('follow', userId);
+        }
         loadFollowStatus(userId);
         const followData = await sbGetFollowStatus(currentUser?.user_id, userId);
         document.getElementById('profile-follower-count').textContent = followData.follower_count;
@@ -723,6 +726,8 @@ async function toggleLike(postId, btn) {
         countEl.textContent = currentCount + 1;
         btn.style.transform = 'scale(1.2)';
         setTimeout(() => btn.style.transform = '', 200);
+        // Notify post owner
+        getPostOwnerId(postId).then(ownerId => { if (ownerId && ownerId !== currentUser.user_id) createNotification('like', ownerId, postId); });
     }
     // Server call in background
     try { await sbToggleLike(postId, currentUser.user_id); } catch { }
@@ -765,6 +770,8 @@ async function addComment(postId, inputEl) {
         loadComments(postId);
         const postCard = document.querySelector(`[data-post-id="${postId}"]`);
         if (postCard) { const countEl = postCard.querySelector('.comment-count'); if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1; }
+        // Notify post owner
+        getPostOwnerId(postId).then(ownerId => { if (ownerId && ownerId !== currentUser.user_id) createNotification('comment', ownerId, postId); });
     } catch { }
 }
 
@@ -821,6 +828,8 @@ async function submitRepost() {
             { user_id: currentUser.user_id, original_post_id: pendingRepostId, repost_text: text },
             { onConflict: 'user_id,original_post_id' }
         );
+        // Notify original post owner
+        getPostOwnerId(pendingRepostId).then(ownerId => { if (ownerId && ownerId !== currentUser.user_id) createNotification('repost', ownerId, pendingRepostId); });
         showToast('Reposted!', 'success');
         closeRepostModal();
         loadPosts(true);
@@ -1219,6 +1228,8 @@ async function sendChatMessage() {
         }
         await sbSendMessage(currentUser.user_id, currentChatUserId, content || '', attachPath, attachType);
         loadMessages(currentChatUserId);
+        // Notify message receiver
+        createNotification('message', currentChatUserId);
     } catch { }
 }
 
@@ -1543,6 +1554,7 @@ function subscribeToRealtime() {
                 const msg = payload.new;
                 if (msg.receiver_id === currentUser.user_id) {
                     showToast('New message received', 'success');
+                    fetchUnreadMessageCount();
                     if (currentSection === 'chat') loadConversations();
                 }
             })
@@ -1550,30 +1562,54 @@ function subscribeToRealtime() {
     } catch(e) { console.log('Realtime subscription error:', e); }
 }
 
-function showNotificationToast(n) {
+async function showNotificationToast(n) {
+    // Fetch actor profile for avatar + name
+    let actorName = 'Someone', actorAvatar = '';
+    try {
+        const { data } = await supabaseClient.from('profiles').select('full_name, avatar_url').eq('id', n.actor_id).single();
+        if (data) {
+            actorName = data.full_name || 'Someone';
+            actorAvatar = data.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(actorName)}&background=C8FF00&color=0B1D3A&size=40&bold=true&font-size=0.45`;
+        }
+    } catch(e) {}
     const texts = {
         follow: 'started following you',
         like: 'liked your post',
         comment: 'commented on your post',
-        message: 'sent you a message',
+        message: 'new message',
         repost: 'reposted your post'
     };
     const text = texts[n.type] || 'sent you a notification';
-    showToast(`Someone ${text}`, 'success');
+    // Show rich notification bar toast with avatar
+    const bar = document.getElementById('notification-bar');
+    if (bar) {
+        const toast = document.createElement('div');
+        toast.className = 'flex items-center gap-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3 shadow-lg animate-slideDown cursor-pointer';
+        toast.innerHTML = `
+            ${actorAvatar ? `<img src="${actorAvatar}" class="w-8 h-8 rounded-full object-cover shrink-0" />` : ''}
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-navy dark:text-white truncate">${escHtml(actorName)}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${text}</p>
+            </div>
+        `;
+        toast.onclick = () => { toast.remove(); navigateTo('notifications'); };
+        bar.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; setTimeout(() => toast.remove(), 300); }, 5000);
+    }
 }
 
 function sendBrowserNotification(n) {
-    if (Notification.permission !== 'granted') return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
     const texts = {
         follow: 'started following you',
         like: 'liked your post',
         comment: 'commented on your post',
-        message: 'sent you a message',
+        message: 'new message',
         repost: 'reposted your post'
     };
     try {
         new Notification('NISLink', {
-            body: `Someone ${texts[n.type] || 'notified you'}`,
+            body: texts[n.type] || 'New notification',
             icon: '/assets/icon-192.png',
             badge: '/assets/icon-192.png'
         });
@@ -1583,6 +1619,73 @@ function sendBrowserNotification(n) {
 function requestBrowserNotifPermission() {
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
+    }
+}
+
+// ══════════════════════════════════════════════════════════
+//  CREATE NOTIFICATION (insert into notifications table)
+// ══════════════════════════════════════════════════════════
+async function createNotification(type, targetUserId, postId) {
+    if (!currentUser?.user_id || targetUserId === currentUser.user_id) return;
+    try {
+        const row = { type, actor_id: currentUser.user_id, target_user_id: targetUserId };
+        if (postId) row.post_id = postId;
+        await supabaseClient.from('notifications').insert(row);
+    } catch(e) { console.log('createNotification error:', e.message); }
+}
+
+// Get post owner ID for notification routing
+async function getPostOwnerId(postId) {
+    try {
+        const { data } = await supabaseClient.from('posts').select('user_id').eq('id', postId).single();
+        return data?.user_id;
+    } catch { return null; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  UNREAD MESSAGE COUNT
+// ══════════════════════════════════════════════════════════
+async function fetchUnreadMessageCount() {
+    if (!currentUser?.user_id) return;
+    try {
+        const { count } = await supabaseClient.from('messages')
+            .select('id', { count: 'exact', head: true })
+            .eq('receiver_id', currentUser.user_id)
+            .eq('read', false);
+        updateChatBadge(count || 0);
+    } catch(e) {}
+}
+
+function updateChatBadge(count) {
+    // Update all chat nav badges
+    document.querySelectorAll('[data-nav="chat"]').forEach(btn => {
+        let badge = btn.querySelector('.chat-badge');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'chat-badge absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center';
+                btn.style.position = 'relative';
+                btn.appendChild(badge);
+            }
+            badge.textContent = count > 9 ? '9+' : count;
+        } else if (badge) {
+            badge.remove();
+        }
+    });
+    // Also update desktop sidebar chat link
+    const desktopChat = document.querySelector('[data-nav="chat"].nav-item');
+    if (desktopChat) {
+        let badge = desktopChat.querySelector('.chat-badge');
+        if (count > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'chat-badge ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center';
+                desktopChat.appendChild(badge);
+            }
+            badge.textContent = count > 9 ? '9+' : count;
+        } else if (badge) {
+            badge.remove();
+        }
     }
 }
 
@@ -1617,6 +1720,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         subscribeToRealtime();
         fetchUnreadNotifCount();
+        fetchUnreadMessageCount();
         requestBrowserNotifPermission();
     }, 2000);
 });

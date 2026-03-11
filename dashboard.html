@@ -945,6 +945,15 @@
         <div id="media-content" class="max-w-5xl max-h-[90vh] flex items-center justify-center"></div>
     </div>
 
+    <!-- Notification toast bar (floating, top-right) -->
+    <div id="notification-bar" class="fixed top-20 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none" style="pointer-events:none">
+        <style>
+            #notification-bar > * { pointer-events: auto; transition: opacity 0.3s, transform 0.3s; }
+            @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            .animate-slideDown { animation: slideDown 0.3s ease-out; }
+        </style>
+    </div>
+
     <!-- ═══════════════════════════════════════════════════════
        UPLOAD PROGRESS BAR (floating, bottom-right)
        ═══════════════════════════════════════════════════════ -->
@@ -974,8 +983,8 @@
     </script>
 
     <script src="js/supabase.min.js"></script>
-    <script src="js/supabase-client.js?v=13"></script>
-    <script src="js/dashboard.js?v=13"></script>
+    <script src="js/supabase-client.js?v=14"></script>
+    <script src="js/dashboard.js?v=14"></script>
     <script>lucide.createIcons();</script>
 </body>
 

@@ -166,6 +166,9 @@
          ═══════════════════════════════════════════════════ -->
         <main class="flex-1 overflow-y-auto pb-20 md:pb-0">
 
+            <!-- Notification Bar -->
+            <div id="notification-bar" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm"></div>
+
             <!-- ──── FEED SECTION ──────────────────────────────── -->
             <section id="section-feed" class="page-section hidden">
                 <div class="max-w-2xl mx-auto px-6 py-8">
@@ -407,6 +410,7 @@
                                             </div>
                                             <p id="profile-display-status" class="text-gray-500 text-sm mt-0.5 italic hidden">
                                             </p>
+                                            <span id="profile-display-pronouns" class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full hidden"></span>
                                             <p class="text-gray-400 text-sm mt-0.5">
                                                 <span id="profile-display-branch"></span>
                                                 <span id="profile-display-year" class="ml-1"></span>
@@ -552,6 +556,16 @@
                                     <label class="form-label">Full Name</label>
                                     <input type="text" id="s-full-name" name="full_name" class="form-input"
                                         placeholder="Your full name" />
+                                </div>
+                                <div>
+                                    <label class="form-label">Pronouns</label>
+                                    <select id="s-pronouns" name="pronouns" class="form-input">
+                                        <option value="">Select</option>
+                                        <option value="he/him">He / Him</option>
+                                        <option value="she/her">She / Her</option>
+                                        <option value="they/them">They / Them</option>
+                                        <option value="other">Other</option>
+                                    </select>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>

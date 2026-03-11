@@ -103,7 +103,18 @@ async function sbGetFeedPosts() {
         `)
         .order('created_at', { ascending: false })
         .limit(50);
-    if (error) throw error;
+    if (error) {
+        // Fallback without post_views/reposts if tables don't exist
+        const res = await supabaseClient.from('posts').select(`
+            id, content, created_at, user_id,
+            profiles!posts_user_id_fkey ( full_name, avatar_url, nis_branch, username ),
+            post_attachments ( id, file_path, file_type, original_name ),
+            post_likes ( id, user_id ),
+            post_comments ( id )
+        `).order('created_at', { ascending: false }).limit(50);
+        if (res.error) throw res.error;
+        return res.data;
+    }
     return data;
 }
 

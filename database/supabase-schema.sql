@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   company       TEXT,
   workfield     TEXT,
   gender        TEXT,
+  pronouns      TEXT,
   wall_privacy  TEXT DEFAULT 'everyone', -- everyone, friends, only_me
   show_online   BOOLEAN DEFAULT true,    -- ghost mode when false
   last_seen     TIMESTAMPTZ,

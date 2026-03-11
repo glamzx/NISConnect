@@ -391,17 +391,36 @@ function createAlumniCard(user) {
     div.className = 'bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer';
     const avatarUrl = user.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name)}&background=C8FF00&color=0B1D3A&size=48&bold=true&font-size=0.45`;
     const isMe = user.id === currentUser?.user_id;
+    const isOnline = user.last_seen && (Date.now() - new Date(user.last_seen).getTime() < 5 * 60 * 1000) && user.show_online !== false;
+    const onlineDot = isOnline ? '<span class="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>' : '';
     div.setAttribute('onclick', `navigateTo('profile', '${user.id}')`);
     div.innerHTML = `
     <div class="flex items-center gap-3">
-      <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover shrink-0" />
+      <div class="relative shrink-0">
+        <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover" />
+        ${onlineDot}
+      </div>
       <div class="flex-1 min-w-0">
         <p class="font-semibold text-sm text-navy truncate">${escHtml(user.full_name)}</p>
         <p class="text-xs text-gray-400 truncate">${user.nis_branch || ''} ${user.graduation_year ? `'${String(user.graduation_year).slice(2)}` : ''}</p>
         ${user.university ? `<p class="text-xs text-gray-400 truncate mt-0.5">${escHtml(user.university)}</p>` : ''}
       </div>
+      ${!isMe ? `<button onclick="event.stopPropagation();directoryFollow('${user.id}', this)" class="dir-follow-btn shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border border-navy text-navy hover:bg-navy hover:text-white transition">Follow</button>` : ''}
     </div>`;
     return div;
+}
+
+// ── Directory follow ──
+async function directoryFollow(userId, btn) {
+    if (!currentUser?.user_id) return;
+    btn.disabled = true;
+    try {
+        await sbToggleFollow(currentUser.user_id, userId);
+        btn.textContent = btn.textContent.trim() === 'Follow' ? 'Following' : 'Follow';
+        btn.classList.toggle('bg-navy');
+        btn.classList.toggle('text-white');
+    } catch { }
+    btn.disabled = false;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -445,8 +464,19 @@ async function loadProfile(userId) {
         const yearEl = document.getElementById('profile-display-year');
         if (u.graduation_year) { yearEl.innerHTML = `<em class="font-display italic">NIS ${String(u.graduation_year).slice(2)}'</em>`; } else { yearEl.textContent = ''; }
         document.getElementById('profile-display-bio').textContent = u.bio || '—';
-        document.getElementById('profile-display-uni').textContent = u.university || '—';
-        document.getElementById('profile-display-degree').textContent = u.degree_major || '—';
+        // Pronouns display
+        const pronounsEl = document.getElementById('profile-display-pronouns');
+        if (pronounsEl) { if (u.pronouns) { pronounsEl.textContent = u.pronouns; pronounsEl.classList.remove('hidden'); } else { pronounsEl.classList.add('hidden'); } }
+        // Student check: if not graduated, just show NIS branch, hide uni/degree
+        const now2 = new Date();
+        const pHasGraduated = u.graduation_year && (now2.getFullYear() > u.graduation_year || (now2.getFullYear() === u.graduation_year && now2.getMonth() >= 5));
+        if (!pHasGraduated && u.user_type === 'student') {
+            document.getElementById('profile-display-uni').textContent = u.nis_branch || '—';
+            document.getElementById('profile-display-degree').textContent = 'Student';
+        } else {
+            document.getElementById('profile-display-uni').textContent = u.university || '—';
+            document.getElementById('profile-display-degree').textContent = u.degree_major || '—';
+        }
         // Work info display
         const workEl = document.getElementById('profile-display-work');
         if (workEl) {
@@ -707,6 +737,28 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(requestNotificationPermission, 3000);
 });
 
+// ══════════════════════════════════════════════════════════
+//  IN-APP NOTIFICATION BAR
+// ══════════════════════════════════════════════════════════
+function showNotificationBar(avatarUrl, name, type) {
+    const bar = document.getElementById('notification-bar');
+    if (!bar) return;
+    const item = document.createElement('div');
+    item.className = 'flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-lg animate-slideDown cursor-pointer';
+    const typeText = type === 'like' ? 'liked your post' : type === 'message' ? 'new message' : type;
+    const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=C8FF00&color=0B1D3A&size=32&bold=true&font-size=0.45`;
+    item.innerHTML = `
+        <img src="${avatarUrl || fallbackAvatar}" class="w-8 h-8 rounded-full object-cover shrink-0" />
+        <div class="min-w-0">
+            <p class="text-sm font-semibold text-navy truncate">${escHtml(name)}</p>
+            <p class="text-xs text-gray-400">${typeText}</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-gray-300 hover:text-gray-500 ml-auto shrink-0">&times;</button>
+    `;
+    bar.appendChild(item);
+    setTimeout(() => { item.style.opacity = '0'; item.style.transform = 'translateX(100px)'; setTimeout(() => item.remove(), 300); }, 5000);
+}
+
 // ── Profile uploads (avatar + cover) ──
 let profileUploadsSetup = false;
 function setupProfileUploads() {
@@ -779,6 +831,7 @@ function setupSettings() {
         e.preventDefault();
         const formData = {
             full_name: document.getElementById('s-full-name').value.trim(),
+            pronouns: document.getElementById('s-pronouns')?.value || null,
             nis_branch: document.getElementById('s-nis-branch').value,
             graduation_year: document.getElementById('s-grad-year').value ? parseInt(document.getElementById('s-grad-year').value) : null,
             university: document.getElementById('s-university').value.trim(),
@@ -807,6 +860,7 @@ async function loadSettings() {
     try {
         const u = await sbGetProfile(currentUser?.user_id);
         document.getElementById('s-full-name').value = u.full_name || '';
+        if (document.getElementById('s-pronouns')) document.getElementById('s-pronouns').value = u.pronouns || '';
         document.getElementById('s-nis-branch').value = u.nis_branch || '';
         document.getElementById('s-grad-year').value = u.graduation_year || '';
         document.getElementById('s-university').value = u.university || '';
@@ -834,6 +888,15 @@ async function loadSettings() {
         } else if (uniField) {
             uniField.disabled = false;
             uniField.placeholder = 'e.g. MIT';
+        }
+        // Also disable university for students who haven't graduated
+        const uniGradField = document.getElementById('s-university');
+        const degreeField = document.getElementById('s-degree');
+        if (u.user_type === 'student' && !hasGraduated) {
+            if (uniGradField) { uniGradField.disabled = true; uniGradField.placeholder = 'Available after graduation'; uniGradField.value = ''; }
+            if (degreeField) { degreeField.disabled = true; degreeField.placeholder = 'Available after graduation'; degreeField.value = ''; }
+        } else {
+            if (degreeField) { degreeField.disabled = false; degreeField.placeholder = 'e.g. Computer Science'; }
         }
         const avatarUrl = u.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.full_name)}&background=C8FF00&color=0B1D3A&size=80&bold=true&font-size=0.4`;
         document.getElementById('settings-avatar-preview').src = avatarUrl;

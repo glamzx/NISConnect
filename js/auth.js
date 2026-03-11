@@ -139,11 +139,12 @@ if (registerForm) {
         const university = document.getElementById('university')?.value?.trim() || null;
         const uniGradYear = document.getElementById('uni_graduation_year')?.value || null;
         const gender = document.getElementById('gender')?.value || null;
+        const pronouns = document.getElementById('pronouns')?.value?.trim() || null;
 
         try {
             const data = await sbSignUp(email, password, fullName, username);
             if (data.user) {
-                await sbUpdateProfile(data.user.id, {
+                const profileData = {
                     nis_branch: nisBranch || null,
                     graduation_year: gradYear ? parseInt(gradYear) : null,
                     full_name: fullName,
@@ -153,7 +154,17 @@ if (registerForm) {
                     university: university,
                     uni_graduation_year: uniGradYear ? parseInt(uniGradYear) : null,
                     gender: gender,
-                });
+                    pronouns: pronouns,
+                };
+                // Wait for trigger to create profile row, then update
+                await new Promise(r => setTimeout(r, 1500));
+                try {
+                    await sbUpdateProfile(data.user.id, profileData);
+                } catch {
+                    // Retry with upsert if row doesn't exist yet
+                    await new Promise(r => setTimeout(r, 1000));
+                    await supabaseClient.from('profiles').upsert({ id: data.user.id, email, ...profileData });
+                }
             }
             showToast('Account created! Redirecting…', 'success');
             setTimeout(() => window.location.href = 'dashboard.html', 800);

@@ -410,13 +410,19 @@ async function sbGetMessages(userId, otherUserId) {
     const { data, error } = await supabaseClient
         .from('messages')
         .select(`
-            id, sender_id, content, attachment_path, attachment_type, created_at,
+            id, sender_id, content, attachment_path, attachment_type, created_at, read_at, edited_at,
             profiles!messages_sender_id_fkey ( full_name, avatar_url )
         `)
         .eq('conversation_id', convId)
         .order('created_at', { ascending: true })
         .limit(200);
     if (error) throw error;
+
+    // Mark received (not mine) unread messages as read
+    const unreadIds = (data || []).filter(m => m.sender_id !== userId && !m.read_at).map(m => m.id);
+    if (unreadIds.length) {
+        supabaseClient.from('messages').update({ read_at: new Date().toISOString() }).in('id', unreadIds).then(() => {});
+    }
 
     return { messages: data, other_user: otherUser };
 }

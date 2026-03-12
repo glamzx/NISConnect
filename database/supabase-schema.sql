@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS posts (
   wall_user_id  UUID REFERENCES profiles(id) ON DELETE CASCADE, -- whose wall, NULL = feed post
   original_post_id BIGINT REFERENCES posts(id) ON DELETE SET NULL, -- repost: original post
   content       TEXT NOT NULL DEFAULT '',
+  edited_at   TIMESTAMPTZ,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -173,6 +174,7 @@ CREATE TABLE IF NOT EXISTS messages (
   attachment_path   TEXT,
   attachment_type   TEXT,
   read_at           TIMESTAMPTZ,
+  edited_at         TIMESTAMPTZ,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

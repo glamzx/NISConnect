@@ -290,9 +290,14 @@ function createPostCard(post) {
         </div>`;
     }
 
-    const deleteBtn = (post.user_id === currentUser?.user_id) ? `<button onclick="deletePost(${post.id}, this)" class="text-gray-300 hover:text-red-500 transition ml-auto"><i data-lucide="trash-2" class="w-4 h-4"></i></button>` : '';
+    const isMyPost = post.user_id === currentUser?.user_id;
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    const canEdit = isMyPost && new Date(post.created_at).getTime() > oneHourAgo;
+    const editBtn = canEdit ? `<button onclick="openEditPostModal(${post.id}, this)" class="text-gray-300 hover:text-blue-500 transition"><i data-lucide="pencil" class="w-4 h-4"></i></button>` : '';
+    const deleteBtn = isMyPost ? `<button onclick="deletePost(${post.id}, this)" class="text-gray-300 hover:text-red-500 transition ml-auto">${editBtn}<i data-lucide="trash-2" class="w-4 h-4 ml-1"></i></button>` : '';
+    const editedLabel = post.edited_at ? '<span class="text-[10px] text-gray-400 italic">edited</span>' : '';
 
-    const contentHtml = post.content ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-2 whitespace-pre-wrap leading-relaxed">${escHtml(post.content)}</p>` : '';
+    const contentHtml = post.content ? `<p class="text-sm text-gray-700 dark:text-gray-300 mt-2 whitespace-pre-wrap leading-relaxed post-content-text">${escHtml(post.content)}</p>` : '';
 
     div.innerHTML = `
     ${repostIndicator}
@@ -304,6 +309,7 @@ function createPostCard(post) {
           <span class="text-xs text-gray-400">${p.nis_branch || ''}</span>
           <span class="text-xs text-gray-300">·</span>
           <span class="text-xs text-gray-400">${timeAgo}</span>
+          ${editedLabel}
           ${deleteBtn}
         </div>
         ${wallAttribution}
@@ -340,6 +346,46 @@ function createPostCard(post) {
     // Track view
     if (currentUser?.user_id) trackPostView(post.id);
     return div;
+}
+
+// ══════════════════════════════════════════════════════════
+//  EDIT POST (within first hour)
+// ══════════════════════════════════════════════════════════
+let editingPostId = null;
+
+function openEditPostModal(postId, btnEl) {
+    editingPostId = postId;
+    const postCard = document.querySelector(`[data-post-id="${postId}"]`);
+    const contentEl = postCard?.querySelector('.post-content-text');
+    const currentContent = contentEl?.textContent || '';
+    const modal = document.getElementById('edit-post-modal');
+    const textarea = document.getElementById('edit-post-content');
+    if (modal && textarea) {
+        textarea.value = currentContent;
+        modal.classList.remove('hidden');
+        textarea.focus();
+    }
+}
+
+async function saveEditPost() {
+    if (!editingPostId) return;
+    const textarea = document.getElementById('edit-post-content');
+    const newContent = textarea?.value?.trim();
+    if (!newContent) return;
+    const btn = document.querySelector('#edit-post-modal button[onclick="saveEditPost()"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+    try {
+        await supabaseClient.from('posts').update({ content: newContent, edited_at: new Date().toISOString() }).eq('id', editingPostId).eq('user_id', currentUser.user_id);
+        closeEditPostModal();
+        showToast('Post updated!', 'success');
+        loadPosts(true);
+    } catch(e) { showToast('Failed to update post.', 'error'); }
+    if (btn) { btn.disabled = false; btn.textContent = 'Save'; }
+}
+
+function closeEditPostModal() {
+    editingPostId = null;
+    document.getElementById('edit-post-modal')?.classList.add('hidden');
 }
 
 let pendingDeletePostId = null;
@@ -1176,12 +1222,14 @@ async function loadMessages(userId) {
         container.innerHTML = '';
         if (!data.messages?.length) { container.innerHTML = '<div class="text-center text-gray-400 text-sm py-8">No messages yet. Say hi!</div>'; }
         else {
+            const oneHourAgo = Date.now() - 60 * 60 * 1000;
             data.messages.forEach(msg => {
                 const isMine = msg.sender_id === currentUser?.user_id;
                 const msgDiv = document.createElement('div');
-                msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+                msgDiv.className = `flex ${isMine ? 'justify-end' : 'justify-start'} group`;
+                msgDiv.dataset.msgId = msg.id;
                 let contentHtml = '';
-                if (msg.content) contentHtml = `<p class="text-sm whitespace-pre-wrap">${escHtml(msg.content)}</p>`;
+                if (msg.content) contentHtml = `<p class="text-sm whitespace-pre-wrap msg-content-text">${escHtml(msg.content)}</p>`;
                 if (msg.attachment_path) {
                     const type = msg.attachment_type || '';
                     if (type.startsWith('image')) contentHtml += `<img src="${msg.attachment_path}" class="rounded-lg max-w-xs mt-1 cursor-pointer hover:opacity-90 transition" onclick="openMediaViewer('${msg.attachment_path}', 'image')" />`;
@@ -1190,13 +1238,49 @@ async function loadMessages(userId) {
                     else contentHtml += `<a href="${msg.attachment_path}" target="_blank" class="text-xs underline mt-1 block">📎 Attachment</a>`;
                 }
                 const readCheck = isMine ? (msg.read_at ? '<span class="text-blue-400 ml-1">✓✓</span>' : '<span class="text-white/40 ml-1">✓</span>') : '';
-                msgDiv.innerHTML = `<div class="max-w-[70%] ${isMine ? 'bg-navy text-white' : 'bg-white text-navy border border-gray-200'} rounded-2xl px-4 py-2.5 shadow-sm">${contentHtml}<p class="text-[10px] ${isMine ? 'text-white/50' : 'text-gray-400'} mt-1 flex items-center gap-0.5">${formatTimeAgo(msg.created_at)}${readCheck}</p></div>`;
+                const editedLabel = msg.edited_at ? `<span class="text-[9px] ${isMine ? 'text-white/40' : 'text-gray-400'} ml-1">edited</span>` : '';
+                const canEdit = isMine && msg.content && new Date(msg.created_at).getTime() > oneHourAgo;
+                const editBtn = canEdit ? `<button onclick="startEditMsg(${msg.id}, this)" class="edit-msg-btn opacity-0 group-hover:opacity-100 text-[10px] ${isMine ? 'text-white/40 hover:text-white/80' : 'text-gray-400 hover:text-gray-600'} transition ml-1" title="Edit"><i data-lucide="pencil" class="w-3 h-3 inline"></i></button>` : '';
+                msgDiv.innerHTML = `<div class="max-w-[70%] ${isMine ? 'bg-navy text-white' : 'bg-white text-navy border border-gray-200'} rounded-2xl px-4 py-2.5 shadow-sm msg-bubble">${contentHtml}<p class="text-[10px] ${isMine ? 'text-white/50' : 'text-gray-400'} mt-1 flex items-center gap-0.5">${formatTimeAgo(msg.created_at)}${editedLabel}${readCheck}${editBtn}</p></div>`;
                 container.appendChild(msgDiv);
             });
         }
         if (wasAtBottom || container.children.length <= 1) container.scrollTop = container.scrollHeight;
         lucide.createIcons();
+        // Refresh unread badge after marking read
+        fetchUnreadMessageCount();
     } catch { }
+}
+
+function startEditMsg(msgId, btnEl) {
+    const msgDiv = btnEl.closest('[data-msg-id]');
+    const bubble = msgDiv?.querySelector('.msg-bubble');
+    const textEl = bubble?.querySelector('.msg-content-text');
+    if (!textEl || !bubble) return;
+    const oldText = textEl.textContent;
+    bubble.innerHTML = `
+        <textarea class="w-full text-sm bg-transparent border border-white/30 rounded-lg px-2 py-1 text-inherit resize-none outline-none" rows="2">${escHtml(oldText)}</textarea>
+        <div class="flex gap-2 mt-1">
+            <button onclick="saveEditMsg(${msgId}, this)" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-accent text-navy">Save</button>
+            <button onclick="cancelEditMsg(this)" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-gray-500/30 text-inherit">Cancel</button>
+        </div>
+    `;
+    bubble.querySelector('textarea').focus();
+}
+
+async function saveEditMsg(msgId, btnEl) {
+    const bubble = btnEl.closest('.msg-bubble');
+    const textarea = bubble?.querySelector('textarea');
+    const newContent = textarea?.value?.trim();
+    if (!newContent) return;
+    try {
+        await supabaseClient.from('messages').update({ content: newContent, edited_at: new Date().toISOString() }).eq('id', msgId).eq('sender_id', currentUser.user_id);
+        loadMessages(currentChatUserId);
+    } catch(e) { showToast('Failed to edit message', 'error'); }
+}
+
+function cancelEditMsg(btnEl) {
+    loadMessages(currentChatUserId);
 }
 
 let pendingChatAttachment = null;

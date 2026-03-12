@@ -1844,12 +1844,12 @@ document.addEventListener('DOMContentLoaded', () => {
 let currentOppCategory = 'all';
 
 const OPP_CATEGORY_META = {
-    internship:  { emoji: '💼', label: 'Internship',  color: 'bg-blue-100 text-blue-700' },
-    research:    { emoji: '🔬', label: 'Research',    color: 'bg-purple-100 text-purple-700' },
-    startup:     { emoji: '🚀', label: 'Startup',     color: 'bg-orange-100 text-orange-700' },
-    competition: { emoji: '🏆', label: 'Competition', color: 'bg-yellow-100 text-yellow-700' },
-    scholarship: { emoji: '🎓', label: 'Scholarship', color: 'bg-green-100 text-green-700' },
-    hackathon:   { emoji: '⚡', label: 'Hackathon',   color: 'bg-pink-100 text-pink-700' },
+    internship:  { label: 'Internship',  color: 'bg-blue-100 text-blue-700' },
+    research:    { label: 'Research',    color: 'bg-purple-100 text-purple-700' },
+    startup:     { label: 'Startup',     color: 'bg-orange-100 text-orange-700' },
+    competition: { label: 'Competition', color: 'bg-yellow-100 text-yellow-700' },
+    scholarship: { label: 'Scholarship', color: 'bg-green-100 text-green-700' },
+    hackathon:   { label: 'Hackathon',   color: 'bg-pink-100 text-pink-700' },
 };
 
 function setOppCategory(cat) {
@@ -1895,7 +1895,7 @@ function createOpportunityCard(opp) {
     div.className = 'bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700';
     const p = opp.profiles || {};
     const avatarUrl = p.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.full_name || 'U')}&background=C8FF00&color=0B1D3A&size=36&bold=true&font-size=0.45`;
-    const meta = OPP_CATEGORY_META[opp.category] || { emoji: '📌', label: opp.category, color: 'bg-gray-100 text-gray-600' };
+    const meta = OPP_CATEGORY_META[opp.category] || { label: opp.category, color: 'bg-gray-100 text-gray-600' };
     const timeAgo = formatTimeAgo(opp.created_at);
     const isMyOpp = opp.user_id === currentUser?.user_id;
     const gradLabel = p.graduation_year ? `'${String(p.graduation_year).slice(2)}` : '';
@@ -1909,7 +1909,7 @@ function createOpportunityCard(opp) {
 
     let actionsHtml = '';
     if (opp.link) {
-        actionsHtml += `<a href="${escHtml(opp.link)}" target="_blank" onclick="event.stopPropagation()" class="flex-1 py-2 bg-navy text-white text-xs font-semibold rounded-full text-center hover:bg-navy-light transition">Apply ↗</a>`;
+        actionsHtml += `<a href="${escHtml(opp.link)}" target="_blank" onclick="event.stopPropagation()" class="flex-1 py-2 bg-navy text-white text-xs font-semibold rounded-full text-center hover:bg-navy-light transition">Apply</a>`;
     } else {
         actionsHtml += `<button onclick="event.stopPropagation();showToast('Contact the poster via Message','info')" class="flex-1 py-2 bg-navy text-white text-xs font-semibold rounded-full hover:bg-navy-light transition">Apply</button>`;
     }
@@ -1920,7 +1920,7 @@ function createOpportunityCard(opp) {
 
     div.innerHTML = `
         <div class="flex items-start justify-between gap-2 mb-3">
-            <span class="${meta.color} text-xs font-semibold px-3 py-1 rounded-full">${meta.emoji} ${meta.label}</span>
+            <span class="${meta.color} text-xs font-semibold px-3 py-1 rounded-full">${meta.label}</span>
             <div class="flex items-center gap-2">
                 <span class="text-xs text-gray-400">${timeAgo}</span>
                 ${deleteBtn}

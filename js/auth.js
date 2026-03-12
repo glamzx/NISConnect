@@ -105,7 +105,12 @@ if (registerForm) {
         btn.disabled = true;
         btn.textContent = 'Creating account…';
 
-        const email = registerForm.email.value.trim();
+        const emailLocal = registerForm.email.value.trim();
+        if (!emailLocal || emailLocal.includes('@')) {
+            showToast('Please enter only the part before @fmsh.nis.edu.kz', 'error');
+            btn.disabled = false; btn.textContent = 'Create Account'; return;
+        }
+        const email = emailLocal + '@fmsh.nis.edu.kz';
         const password = registerForm.password.value;
         const confirmPassword = registerForm.confirm_password.value;
         const fullName = registerForm.full_name.value.trim();

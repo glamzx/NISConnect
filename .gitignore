@@ -16,3 +16,7 @@ uploads/attachments/*
 
 # MAMP
 .mamp/
+backend/target/
+backend/*.iml
+backend/.idea/
+backend/.mvn/

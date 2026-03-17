@@ -1729,11 +1729,11 @@ function subscribeToRealtime() {
                 table: 'messages'
             }, (payload) => {
                 const msg = payload.new;
-                const old = payload.old;
 
                 // Read receipt: someone read MY message
-                if (msg.read_at && !old.read_at && msg.sender_id === currentUser.user_id) {
-                    // Live ✓ → ✓✓ transition
+                // Note: we don't rely on payload.old (requires REPLICA IDENTITY FULL)
+                // Instead, we check if the DOM element hasn't been updated yet
+                if (msg.read_at && msg.sender_id === currentUser.user_id) {
                     const msgEl = document.querySelector(`[data-msg-id="${msg.id}"]`);
                     if (msgEl) {
                         const checkSpan = msgEl.querySelector('.msg-read-check');
@@ -1746,27 +1746,25 @@ function subscribeToRealtime() {
                 }
 
                 // Message edit: someone edited a message in my open chat
-                if (msg.edited_at && msg.edited_at !== old.edited_at) {
+                if (msg.edited_at) {
                     const msgEl = document.querySelector(`[data-msg-id="${msg.id}"]`);
                     if (msgEl) {
                         const textEl = msgEl.querySelector('.msg-content-text');
-                        if (textEl) {
+                        if (textEl && textEl.textContent !== msg.content) {
                             textEl.textContent = msg.content;
-                            // Add "edited" label if not present
                             const bubble = msgEl.querySelector('.msg-bubble');
-                            if (bubble && !bubble.querySelector('.live-edit-flash')) {
+                            if (bubble) {
                                 bubble.classList.add('live-edit-flash');
                                 setTimeout(() => bubble.classList.remove('live-edit-flash'), 1200);
                             }
-                            // Force refresh to show edited label
                             lastRenderedMsgIds = [];
                             if (currentChatUserId) loadMessages(currentChatUserId);
                         }
                     }
                 }
 
-                // Unread badge reconciliation
-                if (msg.read_at && !old.read_at) fetchUnreadMessageCount();
+                // Refresh unread badge when any read_at changes
+                if (msg.read_at) fetchUnreadMessageCount();
             })
 
             // ▸ NEW NOTIFICATIONS
@@ -1992,20 +1990,55 @@ async function getPostOwnerId(postId) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  UNREAD MESSAGE COUNT
+//  UNREAD MESSAGE COUNT (with one-time historical fix)
 // ══════════════════════════════════════════════════════════
+let _historicalMigrationDone = false;
+
 async function fetchUnreadMessageCount() {
     if (!currentUser?.user_id) return;
     try {
-        // Get conversations where I'm a participant
+        // ── One-time fix: historical messages have NULL read_at ──
+        // Messages created before the read_at column was added all have
+        // read_at = NULL, which makes them look "unread". Fix by setting
+        // read_at = created_at for MY received messages that have no read_at.
+        if (!_historicalMigrationDone) {
+            _historicalMigrationDone = true;
+            try {
+                // Get my conversations
+                const { data: myConvs } = await supabaseClient.from('conversations')
+                    .select('id')
+                    .or(`user_a.eq.${currentUser.user_id},user_b.eq.${currentUser.user_id}`);
+                if (myConvs?.length) {
+                    const myConvIds = myConvs.map(c => c.id);
+                    // Find all old unread messages sent TO me (not by me)
+                    const { data: oldMsgs } = await supabaseClient.from('messages')
+                        .select('id, created_at')
+                        .in('conversation_id', myConvIds)
+                        .neq('sender_id', currentUser.user_id)
+                        .is('read_at', null)
+                        .order('created_at', { ascending: true })
+                        .limit(500);
+                    // If there are "old" unread messages (more than what's reasonably new),
+                    // mark them all as read using their created_at as the read timestamp
+                    if (oldMsgs?.length > 0) {
+                        // Mark all as read NOW — these are phantom unreads
+                        const ids = oldMsgs.map(m => m.id);
+                        await supabaseClient.from('messages')
+                            .update({ read_at: new Date().toISOString() })
+                            .in('id', ids);
+                        console.log('[NIS] Migrated', ids.length, 'historical messages to read');
+                    }
+                }
+            } catch(migErr) { console.log('[NIS] Migration skipped:', migErr.message); }
+        }
+
+        // ── Now count genuinely unread messages ──────────────────
         const { data: convs, error: convErr } = await supabaseClient.from('conversations')
             .select('id')
             .or(`user_a.eq.${currentUser.user_id},user_b.eq.${currentUser.user_id}`);
         if (convErr || !convs?.length) { updateChatBadge(0); return; }
         const convIds = convs.map(c => c.id);
 
-        // Count messages NOT sent by me that have no read_at
-        // Use a try-catch in case the read_at column doesn't exist
         let count = 0;
         try {
             const result = await supabaseClient.from('messages')
@@ -2015,20 +2048,18 @@ async function fetchUnreadMessageCount() {
                 .is('read_at', null);
 
             if (result.error) {
-                // If read_at column doesn't exist, badge stays at 0
-                console.log('Unread count query error (read_at may not exist):', result.error.message);
+                console.log('Unread count query error:', result.error.message);
                 updateChatBadge(0);
                 return;
             }
             count = result.count || 0;
         } catch(qe) {
-            // Column doesn't exist — show 0 instead of stale 9+
             updateChatBadge(0);
             return;
         }
 
-        // If the currently open chat conversation is one of these, subtract its unread
-        // (since we're actively viewing it)
+        // If I'm currently viewing a chat, those messages are being read now,
+        // so subtract them (they'll be marked read on next poll)
         if (currentChatUserId && currentSection === 'chat') {
             const openConvId = await sbFindConversation(currentUser.user_id, currentChatUserId);
             if (openConvId && convIds.includes(openConvId)) {

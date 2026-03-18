@@ -110,6 +110,10 @@ if (registerForm) {
             showToast('Please enter a valid email address.', 'error');
             btn.disabled = false; btn.textContent = 'Create Account'; return;
         }
+        if (!email.includes('nis') || !email.includes('edu.kz')) {
+            showToast('Please insert a valid NIS email containing "nis" and "edu.kz".', 'error');
+            btn.disabled = false; btn.textContent = 'Create Account'; return;
+        }
         const password = registerForm.password.value;
         const confirmPassword = registerForm.confirm_password.value;
         const fullName = registerForm.full_name.value.trim();

@@ -689,3 +689,41 @@ async function sbDeleteOpportunity(id) {
     if (error) throw error;
 }
 
+// ══════════════════════════════════════════════════════════
+//  MAP HELPER
+// ══════════════════════════════════════════════════════════
+
+async function sbGetMutualFriendsProfiles(userId) {
+    if (!userId) return [];
+    
+    // 1. Get people I follow
+    const { data: followings } = await supabaseClient
+        .from('subscriptions')
+        .select('following_id')
+        .eq('follower_id', userId);
+    
+    // 2. Get people who follow me
+    const { data: followers } = await supabaseClient
+        .from('subscriptions')
+        .select('follower_id')
+        .eq('following_id', userId);
+
+    if (!followings || !followers) return [];
+
+    const followingIds = followings.map(f => f.following_id);
+    const followerIds = followers.map(f => f.follower_id);
+
+    // Intersection
+    const mutualIds = followingIds.filter(id => followerIds.includes(id));
+    
+    if (mutualIds.length === 0) return [];
+
+    // 3. Fetch their profiles
+    const { data: profiles, error } = await supabaseClient
+        .from('profiles')
+        .select('id, username, full_name, avatar_url, university, graduation_year, nis_branch')
+        .in('id', mutualIds);
+
+    if (error) throw error;
+    return profiles || [];
+}

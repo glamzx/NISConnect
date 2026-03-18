@@ -604,7 +604,7 @@ function loadGoogleMaps() {
     if (mapsLoaded) return;
     mapsLoaded = true;
     const s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBKpd_lSsfUE50uQaPcNl4NnFfXRre14HI&callback=initDashboardMap';
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBKpd_lSsfUE50uQaPcNl4NnFfXRre14HI&libraries=places&callback=initDashboardMap';
     s.async = true; s.defer = true;
     document.head.appendChild(s);
 }
@@ -623,6 +623,124 @@ function initDashboardMap() {
             { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#15325E' }] },
         ],
         disableDefaultUI: true, zoomControl: true,
+    });
+
+    // Populate the map with mutual friends grouped by university
+    populateMap();
+}
+
+// Map cache to store geocoded universities to save API calls
+let universityGeoCache = JSON.parse(localStorage.getItem('uniGeoCache') || '{}');
+
+async function populateMap() {
+    if (!currentUser?.user_id || !map) return;
+    try {
+        const friends = await sbGetMutualFriendsProfiles(currentUser.user_id);
+        const countSpan = document.getElementById('map-alumni-count');
+        if (countSpan) countSpan.textContent = friends.length;
+
+        const uniGroups = {};
+        for (const f of friends) {
+            if (!f.university) continue;
+            const uni = String(f.university).trim();
+            if (!uni) continue;
+            if (!uniGroups[uni]) uniGroups[uni] = [];
+            uniGroups[uni].push(f);
+        }
+
+        const placesService = new google.maps.places.PlacesService(map);
+
+        for (const [uniName, alumniArray] of Object.entries(uniGroups)) {
+            await placeUniversityMarker(uniName, alumniArray, placesService);
+        }
+    } catch(e) {
+        console.error('Failed to populate map:', e);
+    }
+}
+
+async function placeUniversityMarker(uniName, alumniArray, placesService) {
+    if (!universityGeoCache[uniName]) {
+        // Search for the university location and icon
+        const request = {
+            query: uniName + ' university',
+            fields: ['name', 'geometry', 'icon', 'photos']
+        };
+        await new Promise((resolve) => {
+            placesService.textSearch(request, (results, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+                    const place = results[0];
+                    let iconUrl = place.icon;
+                    if (place.photos && place.photos.length > 0) {
+                        iconUrl = place.photos[0].getUrl({ maxWidth: 100, maxHeight: 100 });
+                    }
+                    universityGeoCache[uniName] = {
+                        lat: place.geometry.location.lat(),
+                        lng: place.geometry.location.lng(),
+                        icon: iconUrl
+                    };
+                    localStorage.setItem('uniGeoCache', JSON.stringify(universityGeoCache));
+                }
+                resolve();
+            });
+        });
+    }
+
+    const geo = universityGeoCache[uniName];
+    if (!geo) return; // Geocoding failed
+
+    // Create custom marker icon
+    const markerIcon = {
+        url: geo.icon || 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/school-71.png',
+        scaledSize: new google.maps.Size(40, 40),
+        origin: new google.maps.Point(0, 0),
+        anchor: new google.maps.Point(20, 20)
+    };
+
+    const marker = new google.maps.Marker({
+        position: { lat: geo.lat, lng: geo.lng },
+        map: map,
+        title: uniName,
+        icon: markerIcon,
+        animation: google.maps.Animation.DROP
+    });
+
+    mapMarkers.push(marker);
+
+    // Build InfoWindow HTML
+    let html = `
+        <div class="p-2 w-64 max-h-72 overflow-y-auto custom-scrollbar">
+            <h4 class="font-display font-bold text-navy mb-3 pb-2 border-b border-gray-100 flex items-center gap-2">
+                <i data-lucide="graduation-cap" class="w-4 h-4 text-accent border border-gray-200 rounded-full"></i> 
+                ${escHtml(uniName)}
+            </h4>
+            <div class="space-y-3">
+    `;
+    
+    for (const a of alumniArray) {
+        const avatar = a.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.full_name)}&background=C8FF00&color=0B1D3A&size=40&bold=true`;
+        const branch = a.nis_branch ? `<span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">${escHtml(a.nis_branch)}</span>` : '';
+        const year = a.graduation_year ? `<span class="text-[10px] text-gray-400">'${String(a.graduation_year).slice(-2)}</span>` : '';
+        html += `
+            <div class="flex items-center gap-2 group cursor-pointer" onclick="navigateTo('profile', '${a.id}')">
+                <img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-gray-200">
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-navy truncate group-hover:text-blue-600 transition">${escHtml(a.full_name)}</p>
+                    <div class="flex items-center gap-1 mt-0.5">${branch}${year}</div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += `</div></div>`;
+
+    const infoWindow = new google.maps.InfoWindow({ content: html });
+    marker.addListener('click', () => {
+        infoWindow.open({
+            anchor: marker,
+            map,
+            shouldFocus: false,
+        });
+        setTimeout(() => lucide.createIcons(), 50); // render lucide icons in popup
     });
 }
 

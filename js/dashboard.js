@@ -610,10 +610,15 @@ let geolocated = false;
     s.textContent = `
         @keyframes pulse-dot { 0%{box-shadow:0 0 0 0 rgba(59,130,246,.4)} 70%{box-shadow:0 0 0 12px rgba(59,130,246,0)} 100%{box-shadow:0 0 0 0 rgba(59,130,246,0)} }
         @keyframes pulse-green { 0%{box-shadow:0 0 0 0 rgba(34,197,94,.4)} 70%{box-shadow:0 0 0 10px rgba(34,197,94,0)} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0)} }
-        .map-uni-marker { cursor:pointer; transition:transform .2s; }
-        .map-uni-marker:hover { transform:scale(1.15); }
-        .map-friend-marker { cursor:pointer; transition:transform .2s; }
-        .map-friend-marker:hover { transform:scale(1.1); }
+        
+        .map-uni-marker { cursor:pointer; }
+        .map-uni-marker .marker-content { transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1); width:100%; height:100%; display:flex; align-items:center; justify-content:center; position:relative; }
+        .map-uni-marker:hover .marker-content { transform:scale(1.15); }
+        
+        .map-friend-marker { cursor:pointer; }
+        .map-friend-marker .marker-content { transition: transform .2s cubic-bezier(0.4, 0, 0.2, 1); display:flex; flex-direction:column; align-items:center; }
+        .map-friend-marker:hover .marker-content { transform:scale(1.1); }
+        
         .mapboxgl-popup-content { border-radius:12px !important; padding:0 !important; box-shadow:0 4px 20px rgba(0,0,0,.15) !important; }
     `;
     document.head.appendChild(s);
@@ -720,11 +725,13 @@ function placeFriendMarker(friend) {
     el.className = 'map-friend-marker';
     el.style.cssText = 'position:relative;display:flex;flex-direction:column;align-items:center;';
     el.innerHTML = `
-        <div style="width:42px;height:42px;border-radius:50%;border:3px solid #22c55e;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25);animation:pulse-green 3s infinite;background:white;">
-            <img src="${avatar}" style="width:100%;height:100%;object-fit:cover;" />
-        </div>
-        <div style="margin-top:2px;background:#0B1D3A;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;font-family:Inter,sans-serif;">
-            ${escHtml(friend.full_name.split(' ')[0])}
+        <div class="marker-content">
+            <div style="width:42px;height:42px;border-radius:50%;border:3px solid #22c55e;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.25);animation:pulse-green 3s infinite;background:white;">
+                <img src="${avatar}" style="width:100%;height:100%;object-fit:cover;" />
+            </div>
+            <div style="margin-top:2px;background:#0B1D3A;color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;font-family:Inter,sans-serif;">
+                ${escHtml(friend.full_name.split(' ')[0])}
+            </div>
         </div>
     `;
     const updatedAt = friend.location_updated_at ? formatTimeAgo(friend.location_updated_at) : 'Unknown';
@@ -787,12 +794,14 @@ async function placeUniversityMarker(uniName, alumniArray) {
     el.className = 'map-uni-marker';
     el.style.cssText = 'position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center;';
     el.innerHTML = `
-        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0B1D3A,#15325E);border:3px solid #C8FF00;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.35);">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8FF00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-            </svg>
+        <div class="marker-content">
+            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0B1D3A,#15325E);border:3px solid #C8FF00;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,.35);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8FF00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                </svg>
+            </div>
+            <span style="position:absolute;top:-4px;right:-2px;background:#C8FF00;color:#0B1D3A;font-size:11px;font-weight:800;min-width:20px;height:20px;padding:0 5px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.2);">${count}</span>
         </div>
-        <span style="position:absolute;top:-4px;right:-2px;background:#C8FF00;color:#0B1D3A;font-size:11px;font-weight:800;min-width:20px;height:20px;padding:0 5px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:Inter,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.2);">${count}</span>
     `;
     let popupHtml = `
         <div style="font-family:Inter,sans-serif;padding:14px;width:260px;max-height:300px;overflow-y:auto;">

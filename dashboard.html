@@ -161,9 +161,9 @@
                     class="mobile-fab flex items-center justify-center w-12 h-12 rounded-full bg-accent text-navy shadow-lg -mt-5 transition-all hover:scale-110 active:scale-95">
                     <i data-lucide="plus" class="w-6 h-6 stroke-[2.5]"></i>
                 </button>
-                <button onclick="navigateTo('opportunities')" data-nav="opportunities"
-                    class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all">
-                    <i data-lucide="rocket" class="w-5 h-5"></i><span class="text-[10px] font-medium">Opps</span>
+                <button onclick="navigateTo('chat')" data-nav="chat"
+                    class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all relative">
+                    <i data-lucide="message-circle" class="w-5 h-5"></i><span class="text-[10px] font-medium">Chat</span>
                 </button>
                 <button onclick="navigateTo('profile')" data-nav="profile"
                     class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all">
@@ -760,23 +760,12 @@
 
                     <!-- Password Change -->
                     <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm mt-6">
-                        <h3 class="font-display font-bold text-navy dark:text-white text-sm mb-4">Change Password</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="form-label">New Password</label>
-                                <input type="password" id="s-new-password" class="form-input" placeholder="Min 6 characters" minlength="6" />
-                            </div>
-                            <div>
-                                <label class="form-label">Confirm New Password</label>
-                                <input type="password" id="s-confirm-password" class="form-input" placeholder="Repeat new password" />
-                            </div>
-                            <div class="flex justify-end">
-                                <button onclick="changePassword()" type="button"
-                                    class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-full hover:bg-red-600 transition text-sm">
-                                    Update Password
-                                </button>
-                            </div>
-                        </div>
+                        <h3 class="font-display font-bold text-navy dark:text-white text-sm mb-2">Password & Security</h3>
+                        <p class="text-xs text-gray-400 mb-4">Change your password on a separate secure page.</p>
+                        <a href="change-password.html"
+                            class="inline-flex items-center gap-2 px-6 py-2.5 bg-navy text-white font-semibold rounded-full hover:bg-navy-light transition text-sm">
+                            <i data-lucide="lock" class="w-4 h-4"></i> Change Password
+                        </a>
                     </div>
                 </div>
             </section>
@@ -1142,8 +1131,8 @@
     </script>
 
     <script src="js/supabase.min.js"></script>
-    <script src="js/supabase-client.js?v=26"></script>
-    <script src="js/dashboard.js?v=26"></script>
+    <script src="js/supabase-client.js?v=27"></script>
+    <script src="js/dashboard.js?v=27"></script>
     <script>lucide.createIcons();</script>
 </body>
 

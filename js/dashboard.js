@@ -378,13 +378,21 @@ async function saveEditPost() {
     const btn = document.querySelector('#edit-post-modal button[onclick="saveEditPost()"]');
     if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
     try {
-        const { error } = await supabaseClient.from('posts')
+        // Try with edited_at first; if column doesn't exist, retry without it
+        let result = await supabaseClient.from('posts')
             .update({ content: newContent, edited_at: new Date().toISOString() })
             .eq('id', editingPostId)
             .eq('user_id', currentUser.user_id);
-        if (error) {
-            console.error('Edit post error:', error);
-            showToast('Failed to update post: ' + (error.message || 'Unknown error'), 'error');
+        if (result.error && result.error.message?.includes('edited_at')) {
+            // Column doesn't exist yet — update content only
+            result = await supabaseClient.from('posts')
+                .update({ content: newContent })
+                .eq('id', editingPostId)
+                .eq('user_id', currentUser.user_id);
+        }
+        if (result.error) {
+            console.error('Edit post error:', result.error);
+            showToast('Failed to update post: ' + (result.error.message || 'Unknown error'), 'error');
         } else {
             closeEditPostModal();
             showToast('Post updated!', 'success');

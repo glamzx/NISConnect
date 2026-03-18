@@ -966,6 +966,16 @@ html, body {
     overflow-x: hidden !important;
     padding: 1rem !important;
     -webkit-overflow-scrolling: touch;
+    will-change: transform;
+    transform: translateZ(0);
+    contain: layout style;
+  }
+
+  /* GPU-accelerated message bubbles on mobile */
+  #chat-messages > div {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    contain: layout style paint;
   }
 
   #chat-attach-preview {

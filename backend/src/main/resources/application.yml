@@ -55,6 +55,8 @@ app:
       - http://127.0.0.1:5500
       - https://nisconnect.me
       - https://glamzx.github.io
+      - https://nislink.app
+      - https://www.nislink.app
 
   # WebSocket
   websocket:
@@ -63,6 +65,8 @@ app:
       - http://127.0.0.1:5500
       - https://nisconnect.me
       - https://glamzx.github.io
+      - https://nislink.app
+      - https://www.nislink.app
 
 logging:
   level:

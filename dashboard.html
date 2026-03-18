@@ -14,6 +14,10 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap"
         rel="stylesheet" />
 
+    <!-- Mapbox GL JS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -404,7 +408,7 @@
                                 visible</span>
                         </div>
                     </div>
-                    <div id="google-map" class="w-full h-full"></div>
+                    <div id="mapbox-map" class="w-full h-full"></div>
                 </div>
             </section>
 
@@ -1124,8 +1128,9 @@
     <!-- Google Maps script injected via dashboard.js when needed -->
 
     <script src="js/supabase.min.js"></script>
-    <script src="js/supabase-client.js?v=34"></script>
-    <script src="js/dashboard.js?v=34"></script>
+    <script src="js/mapbox-config.js"></script>
+    <script src="js/supabase-client.js?v=35"></script>
+    <script src="js/dashboard.js?v=35"></script>
     <script>lucide.createIcons();</script>
 </body>
 

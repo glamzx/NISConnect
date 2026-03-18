@@ -595,47 +595,43 @@ async function directoryFollow(userId, btn) {
 }
 
 // ══════════════════════════════════════════════════════════
-//  MAP (Google Maps)
+//  MAP (Mapbox GL JS — Streets v12)
 // ══════════════════════════════════════════════════════════
+// Token loaded from js/mapbox-config.js → MAPBOX_ACCESS_TOKEN
+const MAPBOX_TOKEN = typeof MAPBOX_ACCESS_TOKEN !== 'undefined' ? MAPBOX_ACCESS_TOKEN : '';
 let map = null;
 let mapMarkers = [];
 
-let mapsLoaded = false;
-
-function loadGoogleMaps() {
-    if (typeof google !== 'undefined' && google.maps) {
-        initDashboardMap();
-        return;
-    }
-    if (mapsLoaded) return;
-    mapsLoaded = true;
-    const s = document.createElement('script');
-    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBKpd_lSsfUE50uQaPcNl4NnFfXRre14HI&libraries=places&callback=initDashboardMap';
-    s.async = true; s.defer = true;
-    document.head.appendChild(s);
+function loadMapboxMap() {
+    if (map) return; // Already loaded
+    initDashboardMap();
 }
+
+// Alias for navigation calls
+const loadGoogleMaps = loadMapboxMap;
 
 function initDashboardMap() {
-    const mapEl = document.getElementById('google-map');
-    if (!mapEl) return;
-    map = new google.maps.Map(mapEl, {
-        center: { lat: 51.1694, lng: 71.4491 },
-        zoom: 5,
-        styles: [
-            { elementType: 'geometry', stylers: [{ color: '#0B1D3A' }] },
-            { elementType: 'labels.text.stroke', stylers: [{ color: '#0B1D3A' }] },
-            { elementType: 'labels.text.fill', stylers: [{ color: '#6B7280' }] },
-            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#071428' }] },
-            { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#15325E' }] },
-        ],
-        disableDefaultUI: true, zoomControl: true,
+    const mapEl = document.getElementById('mapbox-map');
+    if (!mapEl || map) return;
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    map = new mapboxgl.Map({
+        container: 'mapbox-map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [71.4491, 51.1694], // Astana, Kazakhstan [lng, lat]
+        zoom: 4,
+        attributionControl: false,
     });
 
-    // Populate the map with mutual friends grouped by university
-    populateMap();
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }));
+
+    map.on('load', () => {
+        populateMap();
+    });
 }
 
-// Map cache to store geocoded universities to save API calls
+// Geocoding cache (persisted to localStorage)
 let universityGeoCache = JSON.parse(localStorage.getItem('uniGeoCache') || '{}');
 
 async function populateMap() {
@@ -645,6 +641,7 @@ async function populateMap() {
         const countSpan = document.getElementById('map-alumni-count');
         if (countSpan) countSpan.textContent = friends.length;
 
+        // Group by university
         const uniGroups = {};
         for (const f of friends) {
             if (!f.university) continue;
@@ -654,100 +651,109 @@ async function populateMap() {
             uniGroups[uni].push(f);
         }
 
-        const placesService = new google.maps.places.PlacesService(map);
-
         for (const [uniName, alumniArray] of Object.entries(uniGroups)) {
-            await placeUniversityMarker(uniName, alumniArray, placesService);
+            await placeUniversityMarker(uniName, alumniArray);
         }
     } catch(e) {
         console.error('Failed to populate map:', e);
     }
 }
 
-async function placeUniversityMarker(uniName, alumniArray, placesService) {
+async function geocodeUniversity(uniName) {
+    // Use Mapbox Geocoding API (free, no extra library)
+    const query = encodeURIComponent(uniName + ' university');
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${query}.json?access_token=${MAPBOX_TOKEN}&limit=1&types=poi,place`;
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.features?.length) {
+            const feat = data.features[0];
+            return {
+                lng: feat.center[0],
+                lat: feat.center[1],
+                name: feat.text || uniName
+            };
+        }
+    } catch(e) { console.error('Geocode failed for', uniName, e); }
+    return null;
+}
+
+async function placeUniversityMarker(uniName, alumniArray) {
+    // Check cache first
     if (!universityGeoCache[uniName]) {
-        // Search for the university location and icon
-        const request = {
-            query: uniName + ' university',
-            fields: ['name', 'geometry', 'icon', 'photos']
-        };
-        await new Promise((resolve) => {
-            placesService.textSearch(request, (results, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
-                    const place = results[0];
-                    let iconUrl = place.icon;
-                    if (place.photos && place.photos.length > 0) {
-                        iconUrl = place.photos[0].getUrl({ maxWidth: 100, maxHeight: 100 });
-                    }
-                    universityGeoCache[uniName] = {
-                        lat: place.geometry.location.lat(),
-                        lng: place.geometry.location.lng(),
-                        icon: iconUrl
-                    };
-                    localStorage.setItem('uniGeoCache', JSON.stringify(universityGeoCache));
-                }
-                resolve();
-            });
-        });
+        const geo = await geocodeUniversity(uniName);
+        if (geo) {
+            universityGeoCache[uniName] = { lat: geo.lat, lng: geo.lng };
+            localStorage.setItem('uniGeoCache', JSON.stringify(universityGeoCache));
+        }
     }
 
     const geo = universityGeoCache[uniName];
-    if (!geo) return; // Geocoding failed
+    if (!geo) return;
 
-    // Create custom marker icon
-    const markerIcon = {
-        url: geo.icon || 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/school-71.png',
-        scaledSize: new google.maps.Size(40, 40),
-        origin: new google.maps.Point(0, 0),
-        anchor: new google.maps.Point(20, 20)
-    };
-
-    const marker = new google.maps.Marker({
-        position: { lat: geo.lat, lng: geo.lng },
-        map: map,
-        title: uniName,
-        icon: markerIcon,
-        animation: google.maps.Animation.DROP
-    });
-
-    mapMarkers.push(marker);
-
-    // Build InfoWindow HTML
-    let html = `
-        <div class="p-2 w-64 max-h-72 overflow-y-auto custom-scrollbar">
-            <h4 class="font-display font-bold text-navy mb-3 pb-2 border-b border-gray-100 flex items-center gap-2">
-                <i data-lucide="graduation-cap" class="w-4 h-4 text-accent border border-gray-200 rounded-full"></i> 
-                ${escHtml(uniName)}
-            </h4>
-            <div class="space-y-3">
+    // Create custom HTML marker element
+    const el = document.createElement('div');
+    el.className = 'mapbox-uni-marker';
+    el.style.cssText = `
+        width: 44px; height: 44px; border-radius: 50%;
+        background: linear-gradient(135deg, #0B1D3A, #15325E);
+        border: 3px solid #C8FF00; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,.3);
+        transition: transform .2s ease;
+        position: relative;
     `;
-    
+    el.innerHTML = `
+        <span style="font-size:16px;">🎓</span>
+        <span style="
+            position:absolute; top:-4px; right:-4px;
+            background:#C8FF00; color:#0B1D3A;
+            font-size:10px; font-weight:800;
+            min-width:18px; height:18px; padding:0 4px;
+            border-radius:9px; display:flex; align-items:center; justify-content:center;
+        ">${alumniArray.length}</span>
+    `;
+    el.onmouseenter = () => el.style.transform = 'scale(1.15)';
+    el.onmouseleave = () => el.style.transform = 'scale(1)';
+
+    // Build popup HTML (same alumni card as before)
+    let popupHtml = `
+        <div style="font-family:Inter,sans-serif; padding:8px; width:250px; max-height:280px; overflow-y:auto;">
+            <h4 style="font-weight:700; color:#0B1D3A; margin:0 0 10px; padding-bottom:8px; border-bottom:1px solid #e5e7eb; font-size:14px;">
+                🎓 ${escHtml(uniName)}
+            </h4>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+    `;
+
     for (const a of alumniArray) {
         const avatar = a.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.full_name)}&background=C8FF00&color=0B1D3A&size=40&bold=true`;
-        const branch = a.nis_branch ? `<span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">${escHtml(a.nis_branch)}</span>` : '';
-        const year = a.graduation_year ? `<span class="text-[10px] text-gray-400">'${String(a.graduation_year).slice(-2)}</span>` : '';
-        html += `
-            <div class="flex items-center gap-2 group cursor-pointer" onclick="navigateTo('profile', '${a.id}')">
-                <img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-gray-200">
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-navy truncate group-hover:text-blue-600 transition">${escHtml(a.full_name)}</p>
-                    <div class="flex items-center gap-1 mt-0.5">${branch}${year}</div>
+        const branch = a.nis_branch ? `<span style="font-size:10px; background:#f3f4f6; color:#6b7280; padding:2px 6px; border-radius:4px;">${escHtml(a.nis_branch)}</span>` : '';
+        const year = a.graduation_year ? `<span style="font-size:10px; color:#9ca3af;">'${String(a.graduation_year).slice(-2)}</span>` : '';
+        popupHtml += `
+            <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="navigateTo('profile', '${a.id}')">
+                <img src="${avatar}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; border:1px solid #e5e7eb;" />
+                <div style="flex:1; min-width:0;">
+                    <p style="font-size:13px; font-weight:600; color:#0B1D3A; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(a.full_name)}</p>
+                    <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">${branch}${year}</div>
                 </div>
             </div>
         `;
     }
-    
-    html += `</div></div>`;
 
-    const infoWindow = new google.maps.InfoWindow({ content: html });
-    marker.addListener('click', () => {
-        infoWindow.open({
-            anchor: marker,
-            map,
-            shouldFocus: false,
-        });
-        setTimeout(() => lucide.createIcons(), 50); // render lucide icons in popup
-    });
+    popupHtml += `</div></div>`;
+
+    const popup = new mapboxgl.Popup({
+        offset: 25,
+        maxWidth: '280px',
+        closeButton: true,
+    }).setHTML(popupHtml);
+
+    const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([geo.lng, geo.lat])
+        .setPopup(popup)
+        .addTo(map);
+
+    mapMarkers.push(marker);
 }
 
 // ══════════════════════════════════════════════════════════

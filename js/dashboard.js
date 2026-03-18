@@ -75,6 +75,11 @@ function setupAvatarDropdown() {
 
 // ── Navigation ─────────────────────────────────────────────
 function navigateTo(section, userId) {
+    // Stop chat polling when leaving the chat section
+    if (currentSection === 'chat' && section !== 'chat') {
+        if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+        currentChatUserId = null;
+    }
     const currentEl = document.querySelector('.page-section:not(.hidden)');
     const targetEl = document.getElementById(`section-${section}`);
     document.querySelectorAll('[data-nav]').forEach(btn => {

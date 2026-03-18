@@ -761,15 +761,27 @@ function placeFriendMarker(friend) {
 }
 
 async function geocodeUniversity(uniName) {
-    // Intelligently append 'university' to acronyms (e.g. 'HKU' => 'HKU university') 
     let searchQuery = uniName.trim();
     const qLower = searchQuery.toLowerCase();
-    if (!qLower.includes('uni') && !qLower.includes('college') && !qLower.includes('school') && !qLower.includes('institute')) {
-        searchQuery += ' university';
-    }
     
-    // We use OpenStreetMap (Nominatim) for university searching because Mapbox Geocoding 
-    // often fails to rank global universities accurately without a proximity bias.
+    // Hardcode world-famous acronyms that geocoders struggle with globally
+    const famousAcronyms = {
+        'mit': 'Massachusetts Institute of Technology',
+        'hku': 'The University of Hong Kong',
+        'ucl': 'University College London',
+        'duke': 'Duke University',
+        'nyu': 'New York University',
+        'ucla': 'University of California Los Angeles',
+        'nus': 'National University of Singapore'
+    };
+    
+    if (famousAcronyms[qLower]) {
+        searchQuery = famousAcronyms[qLower];
+    } else if (!qLower.includes('uni') && !qLower.includes('college') && !qLower.includes('school') && !qLower.includes('institute')) {
+        searchQuery += ' university'; // Fallback for other acronyms
+    }
+
+    // We use OpenStreetMap (Nominatim) for university searching 
     const query = encodeURIComponent(searchQuery);
     const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
     try {

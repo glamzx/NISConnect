@@ -157,6 +157,10 @@
                     class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all">
                     <i data-lucide="search" class="w-5 h-5"></i><span class="text-[10px] font-medium">Search</span>
                 </button>
+                <button onclick="navigateTo('map')" data-nav="map"
+                    class="mobile-nav-item flex flex-col items-center gap-0.5 p-2 rounded-2xl transition-all">
+                    <i data-lucide="map" class="w-5 h-5"></i><span class="text-[10px] font-medium">Map</span>
+                </button>
                 <button onclick="openQuickPostModal()" id="mobile-new-post-btn"
                     class="mobile-fab flex items-center justify-center w-12 h-12 rounded-full bg-accent text-navy shadow-lg -mt-5 transition-all hover:scale-110 active:scale-95">
                     <i data-lucide="plus" class="w-6 h-6 stroke-[2.5]"></i>
@@ -1117,22 +1121,11 @@
         </div>
     </div>
 
-    <!-- Google Maps (loaded only when map section is opened) -->
-    <script>
-        let mapsLoaded = false;
-        function loadGoogleMaps() {
-            if (mapsLoaded) return;
-            mapsLoaded = true;
-            const s = document.createElement('script');
-            s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBKpd_lSsfUE50uQaPcNl4NnFfXRre14HI&callback=initDashboardMap';
-            s.async = true; s.defer = true;
-            document.head.appendChild(s);
-        }
-    </script>
+    <!-- Google Maps script injected via dashboard.js when needed -->
 
     <script src="js/supabase.min.js"></script>
-    <script src="js/supabase-client.js?v=27"></script>
-    <script src="js/dashboard.js?v=27"></script>
+    <script src="js/supabase-client.js?v=28"></script>
+    <script src="js/dashboard.js?v=28"></script>
     <script>lucide.createIcons();</script>
 </body>
 

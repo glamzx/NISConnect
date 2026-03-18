@@ -594,8 +594,19 @@ async function directoryFollow(userId, btn) {
 let map = null;
 let mapMarkers = [];
 
+let mapsLoaded = false;
+
 function loadGoogleMaps() {
-    if (typeof google !== 'undefined' && google.maps) initDashboardMap();
+    if (typeof google !== 'undefined' && google.maps) {
+        initDashboardMap();
+        return;
+    }
+    if (mapsLoaded) return;
+    mapsLoaded = true;
+    const s = document.createElement('script');
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBKpd_lSsfUE50uQaPcNl4NnFfXRre14HI&callback=initDashboardMap';
+    s.async = true; s.defer = true;
+    document.head.appendChild(s);
 }
 
 function initDashboardMap() {

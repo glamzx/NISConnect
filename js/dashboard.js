@@ -697,7 +697,7 @@ function initDashboardMap() {
                 type: 'circle',
                 source: 'universities',
                 paint: {
-                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 2, 12, 6, 18, 10, 22],
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 1, 16, 4, 20, 8, 24, 12, 28],
                     'circle-color': '#0B1D3A',
                     'circle-stroke-width': 3,
                     'circle-stroke-color': '#C8FF00',
@@ -936,6 +936,20 @@ async function getUniversityCoords(uniName) {
 async function geocodeUniversity(uniName) {
     let searchQuery = uniName.trim();
     const qLower = searchQuery.toLowerCase();
+
+    // Hardcoded coordinates for universities that geocoders get wrong
+    const hardcodedCoords = {
+        'nazarbayev university': { lng: 71.3974, lat: 51.0907 },
+        'maqsut narikbayev university': { lng: 71.4107, lat: 51.0898 },
+        'minerva university': { lng: -122.4194, lat: 37.7749 },
+        'astana it university': { lng: 71.4107, lat: 51.0905 },
+        'sdu university': { lng: 71.4491, lat: 51.1694 },
+    };
+    if (hardcodedCoords[qLower]) {
+        console.log('Geocoded (hardcoded):', uniName);
+        return hardcodedCoords[qLower];
+    }
+
     const famousAcronyms = {
         'mit': 'Massachusetts Institute of Technology, Cambridge, MA',
         'hku': 'The University of Hong Kong',
